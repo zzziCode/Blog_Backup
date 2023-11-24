@@ -12,10 +12,10 @@
 
 # 站点域名，比如： https://hugo-next.eu.org
 # Website domain, eg: https://hugo-next.eu.org
-baseURL: /
+baseURL: https://zzzicode.github.io/
 # 站点标题
 # Website title
-title: Hugo NexT
+title: zzzi的小站
 # 主题名称
 # Theme name
 theme: hugo-theme-next
@@ -28,7 +28,7 @@ languageCode: zh-CN
 hasCJKLanguage: true
 # 每页显示文章数量
 # Display items per page
-paginate: 10
+paginate: 8
 # 开启支持表情符号
 # Enable Emoji support
 enableEmoji: true
@@ -43,24 +43,29 @@ markup:
     # lineNos: true
     # lineNumbersInTable: true
     # noClasses: true
-    # # 高亮代码的样式名称，可选：monokai | emacs | api | dracula | friendly
+    # 
     # # 更多的样式：https://xyproto.github.io/splash/docs/all.html
     # # Highlight style: monokai | emacs | api | dracula | friendly
     # # More: https://xyproto.github.io/splash/docs/all.html 
-    # style: "monokai"
-    anchorLineNos: true
+
+    # hl_inline: false
+    # lineAnchors: "12"
+    # noHl: true
+    # tabWidth: 20
     codeFences: true
     guessSyntax: true
     hl_Lines: ""
-    hl_inline: false
-    lineAnchors: ""
     lineNoStart: 1
-    lineNos: false
-    lineNumbersInTable: false
+    lineNos: true
+    lineNumbersInTable: true
     noClasses: true
-    noHl: false
     style: monokai
     tabWidth: 2
+    # # 高亮代码的样式名称，可选：monokai | catppuccin-frappe |catppuccin-latte
+    # 代码样式 ：fruity |github-dark |gruvbox-light | modus-vivendi
+    # paraiso-light |perldoc |rainbow_dash |solarized-dark |solarized-light
+
+    
   tableOfContents:
     # 开始/结束标题级别：1-6 (建议从2开始)
     # Heading title level of start or end: 1-6
@@ -74,6 +79,7 @@ sitemap:
   filename: "sitemap.xml"
   changefreq: "weekly"
   priority: 0.5
+  
 
 outputFormats:
   RSS:
