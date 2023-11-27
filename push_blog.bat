@@ -10,4 +10,3 @@ git push -f origin master
 git config --global --unset http.proxy
 echo ==========success==========
 timeout /T 4 /NOBREAK
-exit

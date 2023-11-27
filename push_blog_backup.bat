@@ -8,4 +8,3 @@ git push -f blog_backup master
 git config --global --unset http.proxy
 echo ==========success==========
 timeout /T 4 /NOBREAK
-exit
