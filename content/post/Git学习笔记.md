@@ -209,7 +209,7 @@ git push -f https://github.com/zzziCode/zzziCode.github.io.git main:master
 
 2. 直接clone一个远程的仓库，不用init
 
-   使用git clone [url]来远程的仓库clone下来，当前文件夹下就会多出一个项目
+   使用git clone [url]来将远程的仓库clone下来，当前文件夹下就会多出一个项目
 
    <img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202305261200973.png" alt="image-20230526120057931" style="zoom:67%;" />
 
@@ -230,8 +230,7 @@ git push -f https://github.com/zzziCode/zzziCode.github.io.git main:master
 
    在项目根目录下建立`.gitignore`文件，之后书写一些忽略的规则：
 
-   ```
-   
+   ```bash
    #为注释
    *.txt        #忽略所有 .txt结尾的文件,这样的话上传就不会被选中！
    !lib.txt     #但lib.txt除外
@@ -239,22 +238,22 @@ git push -f https://github.com/zzziCode/zzziCode.github.io.git main:master
    build/       #忽略build/目录下的所有文件
    doc/*.txt    #会忽略 doc/notes.txt 但不包括 doc/server/arch.txt
    ```
-
-   ### 配置SSH公钥连接到仓库
-
-   在本地生成一个公钥，将其填入GitHub中，就可以实现免密登录
-
-   生成公钥的命令为：
-
-   ```bash
+   
+### 配置SSH公钥连接到仓库
+   
+在本地生成一个公钥，将其填入GitHub中，就可以实现免密登录
+   
+生成公钥的命令为：
+   
+```bash
    ssh-keygen -t rsa//使用加密算法rsa生成公钥
    ```
-
-   生成的公钥存储在`C:\Users\zzzi\.ssh\id_rsa.pub`中，将文件中的内容配置到GitHub中即可
-
-   后续使用Git连接GitHub就不用输入密码，原理就是使用上述命令生成一个公钥和一个私钥，每次连接到远程仓库时，本地发送一个连接请求，之后远程仓库收到请求之后返回一个随机字符串，本地通过私钥加密字符串之后传递给远程仓库，仓库使用配置的公钥进行解密，如果与最开始生成的随机字符串一样就说明连接成功。
-
-   ![image-20230526122957172](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202305261229230.png)
+   
+生成的公钥存储在`C:\Users\zzzi\.ssh\id_rsa.pub`中，将文件中的内容配置到GitHub中即可
+   
+后续使用Git连接GitHub就不用输入密码，原理就是使用上述命令生成一个公钥和一个私钥，每次连接到远程仓库时，本地发送一个连接请求，之后远程仓库收到请求之后返回一个随机字符串，本地通过私钥加密字符串之后传递给远程仓库，仓库使用配置的公钥进行解密，如果与最开始生成的随机字符串一样就说明连接成功。
+   
+![image-20230526122957172](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202305261229230.png)
 
 ## Git分支
 
