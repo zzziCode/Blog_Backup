@@ -10,6 +10,7 @@ categories:
   - 学习笔记
 tags:
   - springcloud
+  - 微服务
 
 # 原文作者
 # Post's origin author name
