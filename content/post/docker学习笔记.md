@@ -36,7 +36,7 @@ math: mathjax
 #  enable: false
 # 关闭文章目录功能
 # Disable table of content
-toc: true
+toc: false
 # 绝对访问路径
 # Absolute link for visit
 #url: "docker学习笔记.html"
@@ -51,7 +51,7 @@ toc: true
 
 > 🐳 docker学习笔记
 
-本节介绍微服务中关于docker的一些知识，
+本节介绍微服务中关于docker的一些知识，主要包括docker的基本操作，然后就是如何使用DockerFile来自定义镜像，使用Docker-Compose来部署容器，最后构造自己的镜像仓库
 
 <!--more-->
 
@@ -63,10 +63,6 @@ toc: true
 
 - 分布式系统中，依赖的组件非常多，不同组件之间部署时往往会产生一些冲突。
 - 在数百上千台服务中重复部署，环境不一定一致，会遇到各种问题
-
-
-
-
 
 ###### 1.1.1.应用部署的环境问题
 
