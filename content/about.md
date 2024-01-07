@@ -13,14 +13,29 @@ url: about.html
 toc: false
 ---
 
-### Hi 👋 Welcome to zzzi's blog! 🎉🎉🎉
+- ### Hi there👋
 
-- 🏫 Studing at @[HEU](http://www.hrbeu.edu.cn/)
-- 🏡 Living at @[HaErBin](https://zh.wikipedia.org/wiki/%E5%93%88%E5%B0%94%E6%BB%A8%E5%B8%82)
-- 📙 &#x2705;[《C++Primer》](https://book.douban.com/subject/25708312/)
-- 📙 &#x2705;[《STL源码剖析》](https://book.douban.com/subject/1110934/)
-- 📙 &#x2705;[《TCP/IP网络编程》](https://book.douban.com/subject/25911735/)
-- 📙 ⬜[《Linux高性能服务端编程》](https://book.douban.com/subject/24722611/)
-- 📙 ⬜[《Effective C++》](https://book.douban.com/subject/5387403/)
-- 🧐 Try to find a good job
-- 🤔 論文を出版したい
+  <div align="center">
+  	<br>
+  	<img src="https://raw.githubusercontent.com/Aniket965/Aniket965/master/pacman.svg?sanitize=true" width="180" height="180">
+  </div>
+
+
+  ## Welcome to zzziCode's repository! 🎉🎉🎉
+
+  - 🏫 Studing at @<a href="http://www.hrbeu.edu.cn/" target="_blank">HEU</a>
+  - 🏡 Living at @[HaErBin](https://zh.wikipedia.org/wiki/%E5%93%88%E5%B0%94%E6%BB%A8%E5%B8%82)
+  - 🌱 Blog at@[zzzi的小站](https://zzzicode.github.io/)
+  - 🧐 Try to find a good job
+  - 🤔 論文を出版したい
+
+  ![](https://img.shields.io/badge/%E5%86%99%E4%BD%9C%E5%B7%A5%E5%85%B7-Typora-blue)  
+  ![](https://img.shields.io/badge/%E5%9B%BE%E5%BA%8A-%E8%85%BE%E8%AE%AF%E4%BA%91-blue)  ![](https://img.shields.io/badge/Git-red)
+
+```JavaScript
+// Which came first: the chicken or the egg?
+console.log(['🥚', '🐣', '🐥', '🐔'].sort())
+
+>>> [ '🐔', '🥚', '🐣', '🐥' ]
+```
+

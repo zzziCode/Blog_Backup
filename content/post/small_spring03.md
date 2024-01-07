@@ -56,13 +56,13 @@ math: mathjax
 
 >🍈 small_spring03
 
-本文主要是在上一章的基础上对上一章中代码存在的问题进行改造，上一章中奖bean对象的创建交给了IOC容器，利用反射创建bean对象并保存到IOC容器中，但是忽略了一点，上章中代码只能创建不携带参数的bean对象，所以这一章主要解决的问题就是创建有参数的bean对象，具体的代码在[仓库](https://github.com/zzziCode/small-spring.git)中
+本文主要是在上一章的基础上对上一章中代码存在的问题进行改造，上一章中将bean对象的创建交给了IOC容器，利用反射创建bean对象并保存到IOC容器中，但是忽略了一点，上章中代码只能创建不携带参数的bean对象，所以这一章主要解决的问题就是创建有参数的bean对象，具体的代码在[仓库](https://github.com/zzziCode/small-spring.git)中
 
 <!--more-->
 
 ## 原因
 
-​		为什么上一章中只能创建不带参数的bean对象呢，主要问题出现在`createBean`函数中，可以查看createBean的代码就能够发现问题：
+​		为什么上一章中只能创建不带参数的bean对象呢，主要问题出现在`createBean`函数中，可以查看`createBean`的代码就能够发现问题：
 
 ```java
 @Override
@@ -83,7 +83,7 @@ protected Object createBean(String beanName, BeanDefinition beanDefinition) thro
 }
 ```
 
-​		在第六行中，直接利用反射，调用`newInstance`方法创建一个bean对象，此处调用时并没有区分bean对象是否携带参数，导致创建出来的bean对象全都是无参的，所以需要改进的地方就在这里，将这里创建bean对象的代码进行扩充，接收bean对象的参数，就可以在创建bean对象时创建携带参数的bean对象了
+​		在第六行中，直接利用反射，调用`newInstance`方法创建一个bean对象，此处调用时并没有**区分**bean对象是否携带参数，导致创建出来的bean对象全都是无参的，所以需要改进的地方就在这里，将这里创建bean对象的代码进行扩充，接收bean对象的参数，就可以在创建bean对象时创建携带参数的bean对象了，其实原始spring框架中的bean对象参数是通过后期属性注入填充的，而不是创建开始就携带参数
 
 ## 思路
 
@@ -103,7 +103,7 @@ protected Object createBean(String beanName, BeanDefinition beanDefinition) thro
 
 <img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310311241940.png" alt="图 4-1" style="zoom: 50%;" />
 
-形成的新的类图如下，可以发现只是多了左边的一个实例化模块，然后在原有的类结构的基础上增加了一些方法，主要是对外提供的接口可以接受bean对象的参数了
+形成的新的类图如下，可以发现只是多了左边的一个实例化模块，然后在原有的类结构的基础上增加了一些方法，主要是对外提供的接口可以接受bean对象的参数了，并且获取bean对象可以传递参数
 
 ![image-20231031124847218](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310311248959.png)
 
@@ -117,11 +117,11 @@ protected Object createBean(String beanName, BeanDefinition beanDefinition) thro
 
    > 这是本章节的核心接口
 
-2. `SimpleInstantiationStrategy`：是`InstantiationStrategy`的其中一个实现类，也是项目中第一个实例化bean对象的**策略类**。内部使用JDK的反射机制来创建携带参数的bean对象，类的结构为：
+2. `SimpleInstantiationStrategy`：是`InstantiationStrategy`的其中一个实现类，也是项目中第一个实例化bean对象的**策略类**。内部使用JDK的**反射**机制来创建携带参数的bean对象，类的结构为：
 
    ![image-20231031125924252](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310311318727.png)
 
-3. `CglibSubclassingInstantiationStrategy`：是`InstantiationStrategy`的另外一个实现类，也是项目中第二个实例化bean对象的**策略类**。内部使用了ASM字节码框架来创建携带参数的bean对象，类的结构为：
+3. `CglibSubclassingInstantiationStrategy`：是`InstantiationStrategy`的另外一个实现类，也是项目中第二个实例化bean对象的**策略类**。内部使用了ASM**字节码**框架来创建携带参数的bean对象，类的结构为：
 
    ![image-20231031125940874](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310311318728.png)
 
@@ -165,9 +165,9 @@ protected Object createBean(String beanName, BeanDefinition beanDefinition) thro
 
 <img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310301144543.png" alt="image-20231030114408629" style="zoom:50%;" />
 
-可以看出，相比于上一章，在createBean的时候增加了两步，本章中按照实例化策略，根据接受的参数来创建带参的bean对象，其整体步骤还是与上一章**保持一致**
+可以看出，相比于上一章，在`createBean`的时候增加了两步，本章中按照实例化策略，根据接收的参数来创建带参的bean对象，其整体步骤还是与上一章**保持一致**
 
-​		核心就是如何利用传递来的参数来创建带参bean对象，主要是在增加的两个方法`createBeanInstance`和`instantiate`中，前一个方法通过参数列表的类型匹配到目标构造函数，然后将目标构造函数传递给`instantiate`方法，在`instantiate`方法中完成创建，`createBeanInstance`方法的代码如下：
+​		核心就是如何利用传递来的参数来创建带参bean对象，主要是在增加的两个方法`createBeanInstance`和`instantiate`中，前一个方法通过参数列表的类型匹配到**目标构造函数**，然后将目标构造函数传递给`instantiate`方法，在`instantiate`方法中完成创建，`createBeanInstance`方法的代码如下：
 
 ```java
 private Object createBeanInstance(BeanDefinition beanDefinition, String beanName, Object[] args) {
@@ -217,3 +217,8 @@ private Object createBeanInstance(BeanDefinition beanDefinition, String beanName
 ![图 4-2](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310311318694.png)
 
 创建bean对象的过程中存在一些问题，但是整体上还是可以创建带参的bean对象了，主要原理就是按照传递来的参数来找到目标有参构造函数，从而创建带参bean对象
+
+总结来说就是做了两点：
+
+1. 获取bean对象时允许传递参数
+2. 创建bean对象时允许根据传递来的参数列表找到匹配的构造函数从而**直接**创建带参bean对象

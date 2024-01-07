@@ -74,7 +74,7 @@ math: mathjax
 
 ### 类的说明
 
-1. `SingletonBeanRegistry`：是一个接口，只是提供了一个待实现的`getSingleton(String beanName)`方法，后期获取bean对象时，调用这个方法，尝试获取一个单例模式的bean，方法的实现在`DefaultSingletonBeanRegistry`类中，主要就是从容器中按照bean对象的名称`尝试`获取bean对象，对象不存在返回值为null
+1. `SingletonBeanRegistry`：是一个接口，只是提供了一个待实现的`getSingleton(String beanName)`方法，后期获取bean对象时调用`getBean`方法，内部调用这个方法，尝试获取一个单例模式的bean，方法的实现在`DefaultSingletonBeanRegistry`类中，主要就是从容器中按照bean对象的名称**尝试**获取bean对象，对象不存在返回值为null
 
    ![image-20231030101148658](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310301057545.png)
 
@@ -82,7 +82,7 @@ math: mathjax
 
    ![image-20231030101229608](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310301057546.png)
 
-   内部有一个名为`singletonObjects`的HashMap容器，主要存储已经实例化后的bean对象及其名称之间的映射关系，主要实现了`getSingleton(String beanName)`方法，并且还增加了一个`addSingleton(String beanName, Object singletonObject)`方法，主要作用是对外提供一个保存实例化后的bean对象的api，在`AbstractAutowireCapableBeanFactory`类中的`createBean(String beanName, BeanDefinition beanDefinition)`中使用，主要作用是将利用反射创建的bean对象保存到容器中
+   内部有一个名为`singletonObjects`的HashMap容器，主要存储已经**实例化后**的bean对象及其名称之间的映射关系，主要实现了`getSingleton(String beanName)`方法，并且还增加了一个`addSingleton(String beanName, Object singletonObject)`方法，主要作用是对外提供一个保存实例化后的bean对象的api，在`AbstractAutowireCapableBeanFactory`类中的`createBean(String beanName, BeanDefinition beanDefinition)`中使用，主要作用是将利用反射创建的bean对象保存到容器中
 
 3. `BeanFactory`：是一个接口，提供了一个待实现的`getBean(String name)`方法，对外暴露之后，可以实现从IOC容器中尝试获取一个单例模式的bean对象
 
@@ -92,13 +92,13 @@ math: mathjax
 
    ![image-20231030102023153](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310301020694.png)
 
-   主要是实现了`getBean(String name)`方法，根据名称尝试获取实例化之后的 bean对象，内部调用继承的getSingleton方法尝试获取一个单例模式的bean对象。不存在的话就调用继承的createBean方法创建并返回一个bean对象
+   主要是实现了`getBean(String name)`方法，根据名称尝试获取实例化之后的 bean对象，内部调用继承的`getSingleton`方法尝试获取一个单例模式的bean对象。不存在的话就调用继承的`createBean`方法创建并返回一个bean对象，也就是先调用，不存在就创建
 
-5. `AbstractAutowireCapableBeanFactory`：主要是将继承下来的`createBean(String beanName, BeanDefinition beanDefinition)`方法实现了，内部使用反射机制从`BeanDefinition`中取出bean的类信息从而利用反射创建一个实例对象，并且调用`addSingleton`方法将其保存到`singletonObjects`中，类的结构如下：
+5. `AbstractAutowireCapableBeanFactory`：主要是将继承下来的`createBean(String beanName, BeanDefinition beanDefinition)`方法实现了，内部使用**反射**机制从`BeanDefinition`中取出bean的类信息从而利用反射创建一个实例对象（此时这个对象还没有属性），并且调用`addSingleton`方法将其保存到`singletonObjects`中，类的结构如下：
 
    ![image-20231030102532007](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310301057549.png)
 
-   > 需要注意的是，这里创建的是最简单的bean对象，无法在创建对象时传递参数，本项目只是实现了两个功能，一个是将bean的创建交给IOC容器，一个是创建的bean保证是单例模式的
+   > 需要注意的是，这里创建的是最简单的bean对象，无法在创建对象时传递参数，本项目只是实现了两个功能，一个是将bean的创建交给IOC容器，一个是创建的bean保证是单例模式的，后期会实现带参的对象构建
 
 6. `BeanDefinitionRegistry`：是一个接口，主要提供了一个待实现的`registerBeanDefinition(String beanName, BeanDefinition beanDefinition)`方法，用来注册bean，也就是将bean的名称与其类信息绑定到一起，使用一个HashMap存储，实现类在`DefaultListableBeanFactory`中，类的结构如下：
 

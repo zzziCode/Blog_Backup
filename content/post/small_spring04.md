@@ -62,13 +62,15 @@ math: mathjax
 
 ## 原因
 
-​		由于spring中，bean与bean之间经常存在依赖关系，最典型的就是service中的bean肯定会依赖于dao中的bean，也就是说，service中的bean有一个参数，参数类型是一个bean。上一节中我们实现了带参bean对象的创建，但是创建bean对象的时候，需要将这个bean对象需要的所有参数都准备好，这就出现了一个问题：
+​		由于spring中，bean与bean之间经常存在依赖关系，最典型的就是service中的bean肯定会依赖于dao中的bean，也就是说，service中的bean有一个参数，参数类型是另一个bean。上一节中我们实现了带参bean对象的创建，但是创建bean对象的时候，需要将这个bean对象需要的所有参数都准备好，这就出现了一个问题：
 
 > 创建service中的bean时，需要将dao中的bean准备好，也就是提前需要得到dao中的bean对象，这不符合**需要时才创建**的逻辑，所以我们在这一节中就将解决这个问题
 
-​		为了实现使用时才创建，需要改变思路，上一节中是将所有的参数准备好，然后直接创建bean对象，这一节中将bean对象依赖的所有关系都记录下来，普通类型的参数直接记录值，bean类型的参数记录一个依赖关系，然后先创建一个空的bean对象，之后再进行**属性填充**，如下图所示：
+​		为了实现使用时才创建，需要改变思路，上一节中是将所有的参数准备好，然后直接创建bean对象，这一节中将bean对象依赖的所有关系都记录下来，普通类型的参数直接记录值，bean类型的参数记录一个依赖关系，然后先创建一个空的bean对象，之后再进行**属性填充**，这种创建bean的方式才更加符合原始spring框架的流程，具体如下图所示：
 
 <img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310312102680.png" alt="image-20231031164604160" style="zoom:50%;" />
+
+> 其实这种依赖关系可以进行配置
 
 ​		上一节中我们创建bean的时候，使用getBean函数需要传递bean需要的参数，这样才能创建带参的bean对象，这一节中我们不传递任何参数，只是将需要哪些参数的信息保存到一个类中，先创建空的bean对象，然后再进行**属性填充**，新的项目结构为：
 
@@ -76,7 +78,7 @@ math: mathjax
 
 不再是创建bean时就填充属性，而是创建好了之后再填充属性，这样就不用在getBean时就传递已经实例化的bean属性了，也就是`getBean("userService")`时不需要实例化`userDao`的bean对象，只有内部真正需要的时候才创建
 
-在注册bean的时候，不仅保存其类信息，还保存其所有依赖的属性，便于后期属性注入
+在注册bean的时候，不仅保存其类信息，还**保存其所有依赖的属性**，便于后期属性注入
 
 ## 思路
 
@@ -84,7 +86,7 @@ math: mathjax
 
 <img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310311834414.png" alt="img" style="zoom:50%;" />
 
-​		为了实现属性填充，本节中又添加了三个新的类，并且在原来项目的基础上对一些类进行了修改，下面具体描述哪些类做了修改，并且新增了哪些类
+​		也就是先创建空bean，然后根据属性依赖关系再进行属性填充，为了实现属性填充，本节中又添加了三个新的类，并且在原来项目的基础上对一些类进行了修改，下面具体描述哪些类做了修改，并且新增了哪些类
 
 ### 类的说明
 
@@ -92,19 +94,19 @@ math: mathjax
 
    ![image-20231031183810861](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310312102683.png)
 
-2. `PropertyValue`：这个类中保存了当前bean中的某一个参数的信息，包括参数的名称，参数的值，也就是这个类中有两个属性，类的结构如下：
+2. `PropertyValue`：这个类中保存了当前bean中的**某一个参数**的信息，包括参数的名称，参数的值，也就是这个类中有两个属性，类的结构如下：
 
    ![image-20231031183930906](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310312102684.png)
 
-   当当前bean的属性是普通属性时，name保存这个属性的名称，value保存这个属性的值，当当前bean的属性是另外一个bean时，例如**service**中的bean依赖与dao中的bean。那么name保存这个bean的名称，也就是保存**dao**中bean的名称，value保存的不再是**dao**中bean对象，而是保存一个`BeanReference`对象，内部存储了dao中**bean**对象的名称，这样做的目的是为了减缓bean的创建时机
+   当当前bean的属性是普通属性时，name保存这个属性的名称，value保存这个属性的值，当当前bean的属性是另外一个bean时，例如**service**中的bean依赖与dao中的bean。那么name保存这个属性的名称，value保存的不再是**dao**中bean对象，而是保存一个`BeanReference`对象，内部存储了dao中**bean**对象的名称，相当于name指明这个属性的名称，`BeanReference`内部指明这个属性是哪个bean，这样做的目的是为了减缓bean的创建时机
 
-3. `PropertyValues`：这个类保存了当前bean的所有属性，每一个属性都保存在一个`PropertyValue`类中，将所有的属性保存到一个`List<PropertyValue>`中，在注册bean的时候，不再是单单保存bean的类信息，连同这个容器也一起注册到`BeanDefinition`中，其中保存了当前这个bean的所有属性，这也说明`BeanDefinition`这个类要做出修改
+3. `PropertyValues`：这个类保存了当前bean的所有属性，每一个属性都保存在一个`PropertyValue`类中，将所有的属性保存到一个`List<PropertyValue>`中，在注册bean的时候，不再是单单保存bean的类信息，连同这个容器也一起注册到`BeanDefinition`中，其中保存了当前这个bean的所有属性，这也说明`BeanDefinition`这个类要做出修改，之后在属性填充时，会将其一个一个的遍历并进行属性的填充
 
-4. `BeanDefinition`：对这个类做出修改，不再是只保存当前这个bean的类信息，还保存当前这个类的所有属性信息，保存到一个`propertyValues`对象中的`List<PropertyValue>`中，新的类结构如下：
+4. `BeanDefinition`：对这个类做出修改，不再是只保存当前这个bean的类信息，还保存当前这个类的所有**属性信息**，保存到一个`propertyValues`对象中的`List<PropertyValue>`中，新的类结构如下：
 
    ![image-20231031184527965](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310312102685.png)
 
-5. `AbstractAutowireCapableBeanFactory`：上一节中介绍在这个类中实现创建带参bean对象的功能，但是本节中将带参bean对象的创建分为两步，**第一步**是创建空的bean，**第二步**是属性填充`applyPropertyValues`，这个方法是**新增**的，形成的类结构为：
+5. `AbstractAutowireCapableBeanFactory`：上一节中介绍在这个类中实现创建带参bean对象的功能，但是本节中将带参bean对象的创建分为两步，**第一步**是创建空的bean，**第二步**是属性填充`applyPropertyValues`，这个方法是**新增**的，相当于不再在第一步就创建带参对象，新形成的类结构为：
 
    ![image-20231031190103985](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310312102686.png)
 
@@ -114,17 +116,17 @@ math: mathjax
 
    ![image-20231031205025978](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310312102687.png)
 
-   对于第二步来说，debug的结果如下，普通属性直接填充，bean属性先创建再填充：
+   对于第二步来说，debug的结果如下，普通属性直接填充，bean属性先创建再填充，这里判断是否是bean属性的依据是当前属性是否是一个`BeanReference`类型的变量：
 
    ![image-20231031205502439](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310312102688.png)
 
-​		经历上面的改造，整个项目的框架就搭好了，那么项目中是如何实现bean的实例化和属性填充分开的呢，我们接下来介绍
+​		经历上面的改造，整个项目的框架就搭好了，那么项目中是如何具体实现bean的实例化和属性填充分开的呢，我们接下来介绍
 
 ### bean的创建和获取	
 
 ​		在上一节中，我们在获取bean的时候，将bean的参数也传递了进去，也就是getBean的时候，同时传递参数，本节中对此进行以下几点改变：
 
-1. `getBean`不再传递参数，而是将参数保存到`PropertyValues`类中
+1. `getBean`**不再**传递参数，而是将参数保存到`PropertyValues`类中
 
 2. bean实例化时一直调用无参构造，使得bean创建之后，属性都为空
 
@@ -139,7 +141,7 @@ math: mathjax
            for (PropertyValue propertyValue : propertyValues.getPropertyValues()) {
                String name = propertyValue.getName();
                Object value = propertyValue.getValue();
-               //属性为bean时单独处理
+               //属性为bean时单独处理，否则直接填充
                if (value instanceof BeanReference) {
                    // A 依赖 B，获取 B 的实例化
                    BeanReference beanReference = (BeanReference) value;
@@ -156,7 +158,7 @@ math: mathjax
    
    ```
 
-   ​		第10~15行是最关键的代码，这一段代码中描述的是，如果当前bean依赖的是另外一个bean（取出的属性值是一个`BeanReference`类型的对象），此时才创建当前这个bean对象，内部调用`getBean`方法，还是按照之前分析的思路，先创建空bean，然后再属性填充，如果属性填充的过程中又依赖bean，那么再临时创建这个bean对象，继续执行先创建空bean，再属性填充的操作，具体的流程如下图，可以看到多了一步**属性填充**的操作：
+   ​		第10~15行是最关键的代码，这一段代码中描述的是，如果当前bean依赖的是另外一个bean（取出的属性值是一个`BeanReference`类型的对象），此时才转去创建当前这个bean对象，内部调用`getBean`方法，还是按照之前分析的思路，先创建空bean，然后再属性填充，如果属性填充的过程中又依赖bean，那么再临时创建这个bean对象，继续执行先创建空bean，再属性填充的操作，具体的流程如下图，可以看到多了一步**属性填充**的操作：
 
    <img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202311030859937.png" alt="image-20231103085923756" style="zoom:50%;" />
 
@@ -174,6 +176,7 @@ math: mathjax
        // 3. UserService 设置属性[uId、userDao]
        PropertyValues propertyValues = new PropertyValues();
        propertyValues.addPropertyValue(new PropertyValue("uId", "10001"));
+       //这里的value是BeanReference
        propertyValues.addPropertyValue(new PropertyValue("userDao",new BeanReference("userDao")));
    
        // 4. UserService 注入bean
@@ -186,8 +189,8 @@ math: mathjax
    }
    ```
    
-   ​		可以发现，获取bean调用的`getBean`操作并没有传递任何参数，也就是调用的底层的无参构造，然后在获取bean的时候，将bean所依赖的一些属性保存到了`PropertyValues`中，重点注意第**12**行，这里`userService`的bean依赖于us`e`rDao的bean，保存属性时不是直接保存`userDao`的bean对象，而是保存了一个`BeanReference`的对象，内部存储了`userDao`的bean对象的**名称**
+   ​		可以发现，获取bean调用的`getBean`操作并没有传递任何参数，也就是调用的底层的无参构造，然后在获取bean的时候，将bean所依赖的一些属性保存到了`PropertyValues`中，重点注意第**12**行，这里`userService`的bean依赖于userDao的bean，保存属性时不是直接保存`userDao`的bean对象，而是保存了一个`BeanReference`的对象，内部存储了`userDao`的bean对象的**名称**，后期属性填充时再转去创建这个依赖的bean属性
 
 ## 总结
 
-经历上面的改造，项目实现了bean的创建与属性填充分开的操作，主要是在`AbstractAutowireCapableBeanFactory`类中将这两步操作分开，实现了bean可以依赖另外的bean，并且在使用的时候才新建bean对象
+经历上面的改造，项目实现了bean的创建与属性填充分开的操作，主要是在`AbstractAutowireCapableBeanFactory`类中将这**两步操作分开**，实现了bean可以依赖另外的bean，并且在使用的时候才新建bean对象
