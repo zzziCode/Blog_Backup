@@ -13,15 +13,13 @@ url: about.html
 toc: false
 ---
 
-- ### Hi there👋
-
-  <div align="center">
-  	<br>
-  	<img src="https://raw.githubusercontent.com/Aniket965/Aniket965/master/pacman.svg?sanitize=true" width="180" height="180">
-  </div>
+<div align="center">
+	<br>
+	<img src="https://raw.githubusercontent.com/Aniket965/Aniket965/master/pacman.svg?sanitize=true" width="180" height="180">
+</div>
 
 
-  ## Welcome to zzziCode's repository! 🎉🎉🎉
+  ## 👋👋👋Welcome to zzzi's blog! 🎉🎉🎉
 
   - 🏫 Studing at @<a href="http://www.hrbeu.edu.cn/" target="_blank">HEU</a>
   - 🏡 Living at @[HaErBin](https://zh.wikipedia.org/wiki/%E5%93%88%E5%B0%94%E6%BB%A8%E5%B8%82)
