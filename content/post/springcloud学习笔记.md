@@ -397,6 +397,8 @@ eureka:
 
 spring会自动帮助我们从eureka-server端，根据userservice这个服务名称，获取userservice的服务，而后完成负载均衡实现服务之间的通信。
 
+总体来说，使用eureka来进行服务注册和发现需要现将eureka启动成一个微服务，然后再其余的微服务中声明需要注册到哪个eureka中，并且指定自己的服务名称，这样服务之间的调用就可以使用服务名称，服务地质变化并不影响服务之间的调用
+
 
 ## Ribbon负载均衡
 
@@ -552,7 +554,7 @@ ribbon:
 
 ## Nacos注册中心
 
-国内公司一般都推崇阿里巴巴的技术，比如注册中心，SpringCloudAlibaba也推出了一个名为Nacos的注册中心，改注册中心的功能相比于eureka更加强大。
+国内公司一般都推崇阿里巴巴的技术，比如注册中心，SpringCloudAlibaba也推出了一个名为Nacos的注册中心，该注册中心的功能相比于eureka更加强大。
 
 [Nacos](https://nacos.io/)是阿里巴巴的产品，现在是[SpringCloud](https://spring.io/projects/spring-cloud)中的一个组件。相比[Eureka](https://github.com/Netflix/eureka)功能更加丰富，在国内受欢迎程度较高。
 
@@ -560,13 +562,13 @@ ribbon:
 
 #### 服务注册到nacos
 
-Nacos是SpringCloudAlibaba的组件，而SpringCloudAlibaba也遵循SpringCloud中定义的服务注册、服务发现规范。因此使用Nacos和使用Eureka对于微服务来说，并没有太大区别。
+Nacos是SpringCloudAlibaba的组件，而SpringCloudAlibaba也遵循SpringCloud中定义的服务注册、服务发现规范。因此使用Nacos和使用Eureka对于微服务来说，**并没有太大区别**。
 
 主要差异在于：
 
 - **依赖不同**
 - **服务地址不同**
-- **不用单独给nacos定义一个模块**
+- **不用单独给nacos定义一个模块**，直接在服务中指定nacos的地址既可以完成服务注册
 
 ###### 1）引入依赖
 
@@ -798,12 +800,10 @@ Nacos和Eureka整体结构类似，服务注册、服务拉取、心跳等待，
 - Nacos与eureka的共同点
   - 都支持服务注册和服务拉取
   - 都支持服务提供者**心跳**方式做健康检测
-
 - Nacos与Eureka的区别
   - Nacos支持服务端主动检测提供者状态：临时实例采用心跳模式，非临时实例采用主动检测模式（类似于非临时实例更加在乎，服务端会主动进行检测）
   - 临时实例心跳不正常会被剔除，非临时实例则不会被剔除
   - Nacos支持服务列表变更的消息推送模式（主动），服务列表更新更及时
-  - Nacos集群默认采用AP方式，当集群中存在非临时实例时，采用CP模式；Eureka采用AP方式
 
 ## Nacos配置管理
 
@@ -815,7 +815,7 @@ Nacos除了可以做注册中心，同样可以做配置管理来使用，这样
 
 ![image-20210714164426792](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202312261409428.png)
 
-Nacos一方面可以将配置集中管理，另一方可以在配置变更时，及时通知微服务，实现配置**热更新**。
+Nacos一方面可以将配置集中管理，另一方可以在配置变更时，及时通知微服务，实现配置**热更新**。也就是说需要热更新的配置才有存放到nacos中的必要，不经常变化的配置就不用存储到nacos中了
 
 ###### 1.1.1.在nacos中添加配置文件
 
@@ -940,7 +940,7 @@ public class UserController {
 
 ###### 方式二
 
-使用@ConfigurationProperties注解代替@Value注解，这种方式只需要。指定配置文件中的前缀，然后springboot自动将配置文件中的属性按照名称注入到类中的变量上
+使用@ConfigurationProperties注解代替@Value注解，这种方式只需要。指定配置文件中的前缀，然后springboot自动将配置文件中的属性按照名称注入到类中的变量上，相当于将配置文件中的属性一次性注入给java中的对象
 
 在user-service服务中，添加一个类，读取patterrn.dateformat属性：
 
@@ -953,6 +953,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Data
+//这个代码可以将配置文件中的pattern属性加载到这个类中
 @ConfigurationProperties(prefix = "pattern")
 public class PatternProperties {
     private String dateformat;
@@ -1040,7 +1041,7 @@ public class UserController {
 
 ![image-20210714174424818](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202312261409445.png)
 
-可以看出来，不管是dev，还是test环境，都读取到了envSharedValue这个属性的值。
+可以看出来，不管是dev，还是test环境，**都**读取到了envSharedValue这个属性的值。
 
 ###### 4）配置共享的优先级
 
@@ -1048,7 +1049,7 @@ public class UserController {
 
 ![image-20210714174623557](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202312261409446.png)
 
-相当于优先级最高的时本环境下的配置，这样就可以实现配置的热更新
+相当于优先级最高的是本环境下的配置，接下来是公共的服务名配置，最后才是本地配置，也就是更新**本环境**中的配置即可实现配置的热更新
 
 ## Feign远程调用
 
@@ -1072,7 +1073,7 @@ Fegin的使用步骤如下：
 
 ###### 1）引入依赖
 
-我们在order-service服务的pom文件中引入feign的依赖，相当于谁要使用别的服务谁就引入这个依赖：
+我们在order-service服务的pom文件中引入feign的依赖，相当于谁要使用别的服务谁就引入这个依赖，或者说谁想远程调用谁就引入这个依赖：
 
 ```xml
 <dependency>
@@ -1412,7 +1413,7 @@ Gateway网关是我们服务的守门神，所有微服务的统一入口，所�
 
 Zuul是基于Servlet的实现，属于**阻塞式编程**。而SpringCloudGateway则是基于Spring5中提供的WebFlux，属于**响应式编程**的实现，具备更好的性能。
 
-阻塞相当于干等，而响应相当于好了再抽空回来
+阻塞相当于**干等**，而响应相当于好了再**抽空**回来
 
 #### gateway快速入门
 
@@ -1487,17 +1488,19 @@ spring:
 
 ###### 4）重启测试
 
-重启网关，访问http://localhost:10010/user/1时，符合`/user/**`规则，请求转发到uri：http://userservice/user/1，得到了结果：
+重启网关，访问http://localhost:10010/user/1时，符合`/user/**`规则，请求**转发**到uri：http://userservice/user/1，然后从nacos中得到userservice 的服务，最终请求得到了结果：
 
 ![image-20210714211908341](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202312261409464.png)
 
-这里有点类似于反向代理的意思，外部不知道userservice服务的地址，但是依然可以通过网关访问userservice的服务
+这里有点类似于反向代理的意思，外部不知道userservice服务的地址，但是依然可以通过网关访问userservice的服务，隐藏了userservice的真实地址
 
 ###### 5）网关路由的流程图
 
 整个访问的流程如下：
 
 ![image-20210714211742956](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202312261409465.png)
+
+主要是路由规则的判断，根据请求的路由决定将请求转发给哪个服务，确定服务名之后，再从nacos中挑选服务并执行请求
 
 总结：
 
@@ -1513,7 +1516,7 @@ spring:
 
 2. 路由目标（uri）：路由的目标地址，http代表固定地址，lb代表根据服务名负载均衡
 
-3. 路由断言（predicates）：判断路由的规则，
+3. 路由断言（predicates）：判断路由的规则，确定请求地址最终转发给哪个服务
 
 4. 路由过滤器（filters）：对请求或响应做处理
 
@@ -1523,7 +1526,7 @@ spring:
 
 我们在配置文件中写的断言规则只是字符串，这些字符串会被Predicate Factory读取并处理，转变为路由判断的条件
 
-例如Path=/user/**是按照路径匹配，这个规则是由
+例如`Path=/user/**`是按照路径匹配，这个规则是由
 
 `org.springframework.cloud.gateway.handler.predicate.PathRoutePredicateFactory`类来
 
@@ -1543,11 +1546,11 @@ spring:
 | RemoteAddr | 请求者的ip必须是指定范围       | - RemoteAddr=192.168.1.1/24                                  |
 | Weight     | 权重处理                       |                                                              |
 
-我们只需要掌握Path这种路由工程就可以了。
+我们只需要掌握Path这种路由工程就可以了。符合该请求的请求就会被转发给相应的服务，从而实现网关的功能，起到过滤转发的作用
 
 #### 过滤器工厂
 
-GatewayFilter是网关中提供的一种**过滤器**，可以对进入网关的请求和微服务返回的响应做处理：
+GatewayFilter是网关中提供的一种**过滤器**，可以对进入网关的请求和微服务返回的响应**做处理**：
 
 ![image-20210714212312871](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202312261409466.png)
 
@@ -1584,7 +1587,7 @@ spring:
         - AddRequestHeader=Truth, Itcast is freaking awesome! ## 添加请求头
 ```
 
-当前过滤器写在userservice路由下，因此仅仅对访问userservice的请求有效。
+当前过滤器写在userservice路由下，因此仅仅对访问userservice的请求有效。也就是访问userservice的请求都会被增加一个请求头
 
 ###### 默认过滤器
 
@@ -1613,7 +1616,9 @@ spring:
 
 defaultFilters的作用是什么？
 
-① 对所有路由都生效的过滤器
+① **对所有路由都生效**的过滤器
+
+相当于过滤器可以添加给某一个特定的服务，或者添加给所有的服务
 
 #### 全局过滤器
 
@@ -1673,7 +1678,7 @@ public interface GlobalFilter {
 
 - 域名不同： www.taobao.com 和 www.taobao.org 和 www.jd.com 和 miaosha.jd.com
 
-- 域名相同，端口不同：localhost:8080和localhost8081
+- 域名相同，端口不同：localhost:8080和localhost:8081
 
 跨域问题：浏览器禁止请求的发起者与服务端发生跨域ajax请求，请求被浏览器拦截的问题
 
@@ -1681,7 +1686,7 @@ public interface GlobalFilter {
 
 ###### 解决跨域问题
 
-在gateway服务的application.yml文件中，添加下面的配置，类似于哪些跨域请求不拦截，放入白名单中，这样跨域的访问也可以成功：
+在gateway服务的application.yml文件中，添加下面的配置，类似于哪些跨域请求不拦截，放入**白名单**中，这样跨域的访问也可以成功：
 
 ```yaml
 spring:
@@ -1692,7 +1697,7 @@ spring:
         add-to-simple-url-handler-mapping: true ## 解决options请求被拦截问题
         corsConfigurations:
           '[/**]':
-            allowedOrigins: ## 允许哪些网站的跨域请求 
+            allowedOrigins: ## 允许哪些网站的跨域请求，这里相当于白名单 
               - "http://localhost:8090"
             allowedMethods: ## 允许的跨域ajax的请求方式
               - "GET"
@@ -1707,7 +1712,7 @@ spring:
 
 ## 总结
 
-本节中介绍了`springcloud`中集成的一些微服务的组件，并且从单体结构的项目引入为什么出现了微服务，微服务拆分之后出现了一系列的问题，比如微服务变得很多，管理可以使用`eureka`或者`nacos`，访问时负载均衡可以使用`ribbon`，同一个服务下的多个实例进行配置管理可以使用`nacos`，服务之间的调用可以使用`Feign`，外部请求微服务时经过的gateway网关技术也做了一定的介绍，算是对微服务有了一个初步的认识，一个功能都可以成为一个微服务，但是并不是任何项目都需要拆分成微服务的结构
+本节中介绍了`springcloud`中集成的一些微服务的组件，并且从单体结构的项目引入为什么出现了微服务，微服务拆分之后出现了一系列的问题，比如微服务变得很多，管理可以使用`eureka`或者`nacos`，访问时负载均衡可以使用`ribbon`，同一个服务下的多个实例进行配置管理可以使用`nacos`，服务之间的远程调用可以使用`Feign`，外部请求微服务时经过的`gateway`网关技术也做了一定的介绍，算是对微服务有了一个初步的认识，每一个功能都可以成为一个微服务，但是并不是任何项目都需要拆分成微服务的结构
 
 
 
