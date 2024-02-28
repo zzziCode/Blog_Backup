@@ -51,7 +51,7 @@ toc: false
 
 > 🐇RabbitMQ学习笔记
 
-本文主要介绍一个异步通信的消息队列技术：`RabbitMQ`，在项目中使用这项技术可以使得微服务之间进行异步通信，提高项目的消息处理效率，在`spring`项目中还对这项技术进行了集成，从而可以更加方便的使用`RabbitMQTemplate`调用接口从而快速地收发消息
+本文主要介绍一个**异步**通信的消息队列技术：`RabbitMQ`，在项目中使用这项技术可以使得微服务之间进行异步通信，提高项目的消息处理效率，在`spring`项目中还对这项技术进行了集成，从而可以更加方便的使用`RabbitMQTemplate`调用接口从而快速地收发消息
 
 <!--more-->
 
@@ -65,7 +65,7 @@ toc: false
 
 异步通讯：就像发邮件，不需要马上回复。
 
-两种方式各有优劣，打电话可以立即得到响应，但是你却不能跟多个人同时通话。发送邮件可以同时与多个人收发邮件，但是往往响应会有延迟。项目中采用何种通信方式取决于业务的特性
+两种方式各有优劣，打电话可以立即得到响应，但是你却不能跟多个人同时通话。发送邮件可以同时与多个人收发邮件，但是往往响应会有延迟。项目中采用何种通信方式取决于**业务的特性**
 
 ### 1.1.1.同步通讯
 
@@ -86,7 +86,7 @@ toc: false
 - 有额外的资源消耗
 - 有级联失败问题
 
-> 但是项目中大部分业务都是使用同步调用，因为这种方式时效性强并且更加简单
+> 但是项目中大部分业务都是使用同步调用，因为这种方式时效性强并且更加简单，微服务之间交互直接同步调用就能直接获得结果
 
 ### 1.1.2.异步通讯
 
@@ -96,9 +96,9 @@ toc: false
 
 在事件模式中，支付服务是事件发布者（publisher），在支付完成后只需要发布一个支付成功的事件（event），事件中带上订单id。
 
-订单服务和物流服务是事件订阅者（Consumer），订阅支付成功的事件，监听到事件后完成自己业务即可。如果后期还有会员积分服务或者短信发送服务，这些都成为时间订阅者，订阅了支付服务
+订单服务和物流服务是事件订阅者（Consumer），订阅支付成功的事件，监听到事件后完成自己业务即可。如果后期还有会员积分服务或者短信发送服务，这些都成为事件订阅者，订阅了支付服务，这有些类似于spring中的事件机制
 
-为了解除事件发布者与订阅者之间的耦合，两者并不是直接通信，而是有一个中间人（Broker）。发布者发布事件到Broker，不关心谁来订阅事件。订阅者从Broker订阅事件，不关心谁发来的消息。
+为了解除事件发布者与订阅者之间的**耦合**，两者并不是直接通信，而是有一个中间人（Broker）。发布者发布事件到Broker，不关心谁来订阅事件。订阅者从Broker订阅事件，不关心谁发来的消息。
 
 ![image-20210422095356088](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202312311344746.png)
 
@@ -118,11 +118,11 @@ Broker 是一个像数据总线一样的东西，或者说其是一个容器，�
 - 架构复杂了，业务没有明显的流程线，不知道消息的传递过程，不好管理
 - 需要依赖于Broker的可靠、安全、性能
 
-好在现在开源软件或云平台上 Broker 的软件是非常成熟的，比较常见的一种就是我们今天要学习的MQ技术。
+好在现在开源软件或云平台上 Broker 的软件是非常成熟的，比较常见的一种就是我们今天要学习的MQ技术。这种技术的特点就是将消息的收发使用一个中间件存储起来，这样就可以做到服务之间的异步通信
 
 ## 1.2.技术对比：
 
-MQ，中文是消息队列（MessageQueue），字面来看就是**存放消息**的队列。也就是事件驱动架构中的Broker。
+MQ，中文是消息队列（MessageQueue），字面来看就是**存放消息**的队列。也就是事件驱动架构中的`Broker`。
 
 比较常见的MQ实现：
 
@@ -163,7 +163,7 @@ RabbitMQ中的一些角色：
 
 - publisher：生产者
 - consumer：消费者
-- exchange个：交换机，负责消息路由，根据一定的规则将消息交给不同的队列
+- exchange：交换机，负责消息路由，根据一定的规则将消息交给不同的队列
 - queue：队列，存储消息
 - virtualHost：虚拟主机，隔离不同租户的exchange、queue、消息的隔离
 
@@ -173,7 +173,7 @@ RabbitMQ官方提供了5个不同的Demo示例，对应了不同的消息模型�
 
 ![image-20210717163332646](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202312311344749.png)
 
-前两种不涉及到交换机，一个队列中的消息只能传递给监听队列的其中一个消费者，符合负载均衡的策略。后三种涉及到交换机，这是为了一些特殊的业务设计的
+前两种不涉及到交换机，一个队列中的消息只能传递给监听队列的**其中一个**消费者，符合负载均衡的策略。后三种涉及到交换机，这是为了一些特殊的业务设计的
 
 ## 2.3.入门案例
 
@@ -420,7 +420,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class SpringRabbitListener {
-
+	//监听这个队列，队列中有消息时方法会直接接收到
     @RabbitListener(queues = "simple.queue")
     public void listenSimpleQueueMessage(String msg) throws InterruptedException {
         System.out.println("spring 消费者接收到消息：【" + msg + "】");
@@ -432,7 +432,7 @@ public class SpringRabbitListener {
 
 ## 3.2.WorkQueue
 
-Work queues，也被称为（Task queues），任务模型。简单来说就是**让多个消费者绑定到一个队列，共同消费队列中的消息**，在这种模型，一条消息只会交给其中的一个消费者。
+Work queues，也被称为（Task queues），任务模型。简单来说就是**让多个消费者绑定到一个队列，共同消费队列中的消息**，在这种模型，一条消息只会交给**其中一个**消费者。这样符合负载均衡的策略，消息处理的速度更快
 
 ![image-20210717164238910](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202312311344756.png)
 
@@ -470,6 +470,7 @@ public void testWorkQueue() throws InterruptedException {
 要模拟多个消费者绑定同一个队列，我们在consumer服务的SpringRabbitListener中添加2个新的方法：
 
 ```java
+//两个消费者都绑定到同一个队列中，利用负载均衡的策略来处理队列中的消息
 @RabbitListener(queues = "simple.queue")
 public void listenWorkQueue1(String msg) throws InterruptedException {
     System.out.println("消费者1接收到消息：【" + msg + "】" + LocalTime.now());
@@ -491,7 +492,7 @@ public void listenWorkQueue2(String msg) throws InterruptedException {
 
 可以看到消费者1很快完成了自己的25条消息。**消费者2却在缓慢的处理自己的25条消息**。
 
-也就是说消息是平均分配给每个消费者，并没有考虑到消费者的处理能力。这样显然是有问题的。
+也就是说消息是**平均分配**给每个消费者，并没有考虑到消费者的处理能力。这样显然是有问题的。
 
 ### 3.2.4.能者多劳
 
@@ -505,13 +506,13 @@ spring:
         prefetch: 1 # 每次只能获取一条消息，处理完成才能获取下一个消息
 ```
 
-> 上面的两个消费者每次都先预取很多消息，即使自己暂时处理不了那么多，增加这个配置项之后，每个消费者每次只取一条消息，从而谁处理能力强处理的消息就会变多
+> 上面的两个消费者每次都先**预取**很多消息，即使自己暂时处理不了那么多，增加这个配置项之后，每个消费者每次只取一条消息，处理完成之后再取消息，从而谁处理能力强处理的消息就会变多，能者多劳
 
 ### 3.2.5.总结
 
 Work模型的使用：
 
-- 多个消费者绑定到一个队列，同一条消息只会被一个消费者处理
+- 多个消费者绑定到一个队列，同一条消息只会**被一个消费者**处理
 - 通过设置`prefetch`来控制消费者预取的消息数量
 
 ## 3.3.发布/订阅
@@ -616,7 +617,7 @@ public class FanoutConfig {
 }
 ```
 
-> 经过上面的代码设置，目前存在一个itcast.fanout交换机，该交换机下面绑定了两个队列，分别是fanout.queue1，fanout.queue2，这两个队列下面各有一个消费者
+> 经过上面的代码设置，目前存在一个itcast.fanout交换机，该交换机下面绑定了两个队列，分别是fanout.queue1，fanout.queue2
 
 ### 3.4.2.消息发送
 
@@ -635,9 +636,10 @@ public void testFanoutExchange() {
 
 ### 3.4.3.消息接收
 
-在consumer服务的SpringRabbitListener中添加两个方法，作为消费者：
+在consumer服务的SpringRabbitListener中添加两个方法，作为消费者，此时就可以消费两个队列中的消息：
 
 ```java
+//两个消费者绑定到不同的队列上，广播模式下，所有的队列都会收到消息
 @RabbitListener(queues = "fanout.queue1")
 public void listenFanoutQueue1(String msg) {
     System.out.println("消费者1接收到Fanout消息：【" + msg + "】");
@@ -655,7 +657,7 @@ public void listenFanoutQueue2(String msg) {
 
 - 接收publisher发送的消息
 - 将消息按照**规则路由**到与之绑定的队列
-- 不能缓存消息，路由失败，消息丢失
+- **不能缓存**消息，路由失败，消息丢失
 - FanoutExchange的会将消息路由到每个绑定的队列
 
 声明队列、交换机、绑定关系的Bean是什么？
@@ -693,7 +695,8 @@ public void listenFanoutQueue2(String msg) {
 在consumer的SpringRabbitListener中添加两个消费者，同时基于注解来声明队列和交换机：
 
 ```java
-//这一个注解就可以声明一个交换机，和一个队列，并且将二者进行绑定
+//这一个注解就可以声明一个交换机，和一个队列，并且将二者进行绑定，最后指定绑定的key是什么
+//直接将绑定关系和key都指定好，然后直接监听
 @RabbitListener(bindings = @QueueBinding(
     value = @Queue(name = "direct.queue1"),
     exchange = @Exchange(name = "itcast.direct", type = ExchangeTypes.DIRECT),
@@ -732,7 +735,7 @@ public void testSendDirectExchange() {
     String exchangeName = "itcast.direct";
     // 消息
     String message = "红色警报！日本乱排核废水，导致海洋生物变异，惊现哥斯拉！";
-    // 发送消息
+    // 发送消息，指定key，此时两个queue都会收到，因为他们的key都有red
     rabbitTemplate.convertAndSend(exchangeName, "red", message);
 }
 ```
@@ -741,28 +744,30 @@ public void testSendDirectExchange() {
 
 描述下Direct交换机与Fanout交换机的差异？
 
-- Fanout交换机将消息路由给每一个与之绑定的队列
-- Direct交换机根据RoutingKey判断路由给哪个队列
-- 如果多个队列具有相同的RoutingKey，则与Fanout功能类似
+- Fanout交换机将消息路由给**每一个**与之绑定的队列
+- Direct交换机根据`RoutingKey`判断路由给哪个队列
+- 如果多个队列具有相同的RoutingKey，且消息发送时也使用了这个RoutingKey，则此时与Fanout功能类似
 
 基于@RabbitListener注解声明队列和交换机有下面两个注解：
 
-- @Queue
-- @Exchange
+- @Queue：指定当前队列的名称
+- @Exchange：指定当前绑定的交换机名称以及交换机类型
 
 ## 3.6.Topic
 
 ### 3.6.1.说明
 
-`Topic`类型的`Exchange`与`Direct`相比，都是可以根据`RoutingKey`把消息路由到不同的队列。只不过`Topic`类型`Exchange`可以让队列在绑定`Routing key` 的时候使用通配符！此时可能一次性匹配多个队列，相比于Direct匹配多个队列需要给每一个队列声明一个相同的routing key来说更加方便，二者的使用场景是不同的
+`Topic`类型的`Exchange`与`Direct`相比，都是可以根据`RoutingKey`把消息路由到不同的队列。只不过`Topic`类型`Exchange`可以让队列在绑定`Routing key` 的时候使用**通配符**！此时可能一次性匹配多个队列，相比于Direct匹配多个队列需要给每一个队列声明一个相同的routing key来说更加方便，二者的使用场景是不同的
 
 `Routingkey` 一般都是有一个或多个单词组成，多个单词之间以”.”分割，例如： `item.insert`
 
  通配符规则：
 
-`#`：匹配一个或多个词
+`#`：匹配一个或多个**词**
 
-`*`：匹配不多不少恰好1个词
+`*`：匹配不多不少恰好1个**词**
+
+> 注意此时匹配的是词（.分割的为一个词），而不是字
 
 举例：
 
@@ -776,8 +781,8 @@ public void testSendDirectExchange() {
 
 解释：
 
-- Queue1：绑定的是`china.#` ，因此凡是以 `china.`开头的`routing key` 都会被匹配到。包括china.news和china.weather
-- Queue2：绑定的是`#.news` ，因此凡是以 `.news`结尾的 `routing key` 都会被匹配。包括china.news和japan.news
+- Queue1：绑定的是`china.#` ，因此凡是以 `china.`**开头**的`routing key` 都会被匹配到。包括china.news和china.weather
+- Queue2：绑定的是`#.news` ，因此凡是以 `.news`**结尾**的 `routing key` 都会被匹配。包括china.news和japan.news
 
 案例需求：
 
@@ -805,7 +810,7 @@ public void testSendTopicExchange() {
     String exchangeName = "itcast.topic";
     // 消息
     String message = "喜报！孙悟空大战哥斯拉，胜!";
-    // 发送消息
+    // 发送消息，此时的routingkey是china.news
     rabbitTemplate.convertAndSend(exchangeName, "china.news", message);
 }
 ```
@@ -815,6 +820,7 @@ public void testSendTopicExchange() {
 在consumer服务的SpringRabbitListener中添加方法：
 
 ```java
+//还是一个注解搞定队列和交换机的绑定关系，以及对应的RoutingKey
 @RabbitListener(bindings = @QueueBinding(
     value = @Queue(name = "topic.queue1"),
     exchange = @Exchange(name = "itcast.topic", type = ExchangeTypes.TOPIC),
@@ -834,7 +840,7 @@ public void listenTopicQueue2(String msg){
 }
 ```
 
-> 相比于Direct，唯一的区别就是注解中的key不同，一个是不包含通配符的字符串，一个是包含通配符的字符串
+> 相比于Direct，唯一的区别就是注解中的**key不同**，一个是不包含通配符的字符串，一个是包含通配符的字符串
 
 ### 3.6.4.总结
 
@@ -847,11 +853,11 @@ public void listenTopicQueue2(String msg){
 
 ## 3.7.消息转换器
 
-之前说过，Spring会把你发送的消息序列化为字节发送给MQ，接收消息的时候，还会把字节**反序列**化为Java对象，如果是普通的变量影响还不是很大，如果传递的是java对象时，jdk的序列化就变得太浪费资源。
+之前说过，Spring会把你发送的消息**序列化**为字节发送给MQ，接收消息的时候，还会把字节**反序列**化为Java对象，如果是普通的变量影响还不是很大，如果传递的是java对象时，默认的序列化就变得太浪费资源。
 
 ![image-20200525170410401](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202312311344765.png)
 
-只不过，默认情况下Spring采用的序列化方式是JDK序列化。众所周知，JDK序列化存在下列问题：
+只不过，默认情况下Spring采用的序列化方式是**JDK序列化**。众所周知，JDK序列化存在下列问题：
 
 - 数据体积过大
 - 有安全漏洞
@@ -870,7 +876,7 @@ public void testSendMap() throws InterruptedException {
     Map<String,Object> msg = new HashMap<>();
     msg.put("name", "Jack");
     msg.put("age", 21);
-    // 发送消息
+    // 发送消息，此时消息是一个map
     rabbitTemplate.convertAndSend("simple.queue","", msg);
 }
 ```
@@ -899,7 +905,7 @@ public void testSendMap() throws InterruptedException {
 
 配置消息转换器。
 
-在启动类中添加一个Bean即可：
+在启动类中添加一个Bean即可，有了这个bean就可以自动使用json的序列化：
 
 ```java
 @Bean
@@ -912,7 +918,7 @@ public MessageConverter jsonMessageConverter(){
 
 # 总结
 
-本节中介绍了一种异步通信的技术，并且spring中也引入了这种技术，可以实现不同类型的异步消息收发，在消息的收发过程中，默认使用了jdk的序列化来完成对象的持久化，我们可以将其改成更好的json转换器来提高可读性和效率
+本节中介绍了一种异步通信的技术，并且spring中也引入了这种技术，引入maven依赖之后直接使用注解就可以完成消息的异步发送和处理，在消息的收发过程中，默认使用了jdk的序列化来完成对象的持久化，我们可以将其改成更好的json转换器来提高可读性和效率
 
 
 
