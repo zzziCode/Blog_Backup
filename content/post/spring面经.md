@@ -132,9 +132,9 @@ ApplicationContext：实现了beanFactory，在启动时就会初始化bean，�
 2. 注解（使用@Component注解配置的类，前提是需要配置包扫描路径ComponentScan）
 3. javaConfig（@Bean）使用@Configuration来进行配置，内部将@Bean放置在方法上返回一个bean对象
 4. @Import
-   - ImportSelector：返回一个字符串数组，内部保存了很多bean的类名称
+   - 实现ImportSelector接口：返回一个字符串数组，内部保存了很多bean的类名称
    - ImportBeanDefinitionRegistrar：手动注入bean的定义信息，从而进行bean的配置
-   - 直接导入其他的配置类
+   - 直接导入其他的配置类或者bean的class文件
 
 #### bean的作用域
 
@@ -262,4 +262,114 @@ ApplicationContext：实现了beanFactory，在启动时就会初始化bean，�
 2. beanDefinition的注册顺序由注解，配置的**解析顺序**来决定的
    1. @configuration最先
    2. BeanDefinitionRegistryPostProcessor接口注册的beanDefinition最后
-   3. 剩下的
+   3. 剩下的不知道了
+
+#### spring的配置方式
+
+1. xml：最后按照层级结构解析读取到bean的配置并实例化
+2. 注解：根据注解中配置的信息来实例化bean
+3. java的配置：使用@configuration代替xml文件，@Bean代替`<bean>`的配置
+
+#### javaConfig如何代替xml配置
+
+1. 使用的应用上下文不一样（ClassPathApplicationContext，AnnotationConfigApplicationContext）
+2. 使用@Configuration注解的配置类代替xml文件
+3. 配置bean的各种属性都有对应的注解
+
+> 解析的时候，使用beanDefinitionreader接口下不同的实现类来读取xml或者javaconfig类，之后使用不同的parser来解析得到beanDefinition
+
+#### 自动注入属性时，如果没有或者找到多个bean，如何让其不报错
+
+1. 没有找到：自动注入时，，默认必须注入，一旦找不到这个属性就会报错，我们可以将autowired中的一个**required属性设置为false**，此时找不到就不会报错
+2. 找到多个：将想要的那个bean设置为primary，或者使用quelifier来给bean指定一个标签
+
+#### autowired和resource的区别
+
+1. autowired是spring提供的，resource是jdk提供的
+2. autowired先bytype再byname，resource先byname再bytype
+
+#### autowired自动装配过程
+
+1. autowired使用bean的后置处理器进行解析，将要注入的属性的一些元信息（类型，名称）获取到
+2. 在属性注入的过程中真正进行自动装配，根据上一步得到的信息去ioc容器中查找并注入
+3. 先bytype再byname，其中还涉及到primary（指定主要的bean）和qualifier（指定bean的名称，注入时指定名称）的知识
+
+#### @configuration的作用
+
+1. 可以用来配置bean
+2. 代替传统的xml文件
+3. 没有configuration也可以配置bean，只要使用了@bean，spring就可以自动完成扫描，此时这个类不再是一个配置类，而是一个普通类
+4. 增加configuration之后，该类会被cglib创建一个**动态代理**进行增强，执行被@bean修饰的方法时，会先从容器中找，**从而保证创建的bean都是单例的**
+
+#### @bean的方法如何保证bean是单例
+
+需要在类上加上configuration注解，此时会为这个类生成**cglib动态代理**，调用这些方法时会被增强，会先从容器中找bean，从而保证单例
+
+#### 如何引入第三方的bean
+
+1. 用@bean修饰方法，方法内手动new，可以干预实例化过程
+2. 用@import直接导入类，无法干预实例化过程
+3. 用import导入importselector：返回一个字符串数组
+4. 用import导入importBeandefinitionregistrar：手动编写beanDefinition再完成实例化
+
+#### aop常见名词 
+
+面向切面编程，给现有代码进行批量增强时使用，底层原理使用了动态代理
+
+1. 切面： 包含切点和通知，在项目中是一个类
+2. 切点：决定哪些方法会被增强，通常由切点表达式实现
+3. 通知：具体如何增强，何时何地增强原有代码，或者说就是想要增加的公共代码
+4. 连接点：具体在哪应用通知，也就是被增强的方法
+5. 代理：当出现连接点时由代理进行拦截并应用通知进行增强
+6. 织入：通知加入到被增强的方法中的**过程**叫做织入，aspectj在连接点**编译期**就将通知植入进行增强，而spring aop是在**运行**的时候产生一个动态代理来将通知植入进行增强
+
+#### spring aop的类型
+
+1. 前置
+2. 后置：在返回或者异常之后
+3. 环绕：只有这个通知需要手动指定连接点的执行时机
+4. 异常
+5. 返回
+
+#### spring AOP与AspectJ aop的区别
+
+1. 织入时机不一样，spring在运行时使用动态代理织入，而AspectJ在编译时织入，直接修改class字节码文件来进行增强
+2. spring的性能更好，不改字节码
+3. AspectJ功能更强大
+4. spring对被增强的代码影响较小，因为不修改字节码
+
+#### JDK和Cglib动态代理的区别
+
+> jdk生成动态代理类之后，根据通知的类型决定执行的顺序，并且利用**反射**执行原有方法
+>
+>  cglib在增强时是通过**子类调用父类**中的原有方法，在这个过程中执行增强的代码
+
+1. jdk是基于**接口**的，要求被代理的类必须实现一个接口，cglib基于**继承**
+2. jdk通过**反射**生成动态代理，cglib通过**字节码**库（ASM）来生成被代理类
+3. jdk**性能更好**，jdk生成代码快，调用慢，cglib生成代码慢，调用快，并且jdk使用java自带的反射，而cglib使用了第三方库
+4. jdk被代理的方法**必须是公开**的，因为它是基于接口的（<u>接口中的方法默认公开</u>），cglib没有限制
+
+#### aop失效
+
+1. 方法**内部自调用**会导致AOP失效，因为aop需要进行增强代码，如果被增强的方法内部调用了本类中的其他方法，那么就会直接使用this调用，这里的this指的是原始对象，也就是没有被增强的对象，从而会导致方法内部调用的这个方法aop失效
+2. jdk动态代理中被增强的方法不是public
+3. 被增强的类没有配置为bean，没有交给spring管理
+
+解决方法：
+
+1. 在方法内部调用的方法单独抽取出一个类来增强
+2. 自己注入自己，此时注入的就是被增强的动态代理对象，然后通过**对象.**的方式调用
+3. 将当前被增强的对象放入ThreadLocal中（exposeProxy属性设置为true），然后利用aopcontext来获取到当前被增强的对象，从而调用方法内部被调用的方法
+
+#### spring AOP在哪里创建的动态代理
+
+1. 初始化后，在beanPostProcessor中的一个方法中创建
+2. 特殊情况：出现循环依赖时，有必要的话会进行提前AOP
+
+#### spring AOP的实现流程
+
+1. 启用：启用AOP时（EnableAspectJAutoProxy）会注册一个bean的后置处理器来处理AOP
+2. 解析：创建bean时调用上面注册的后置处理器解析切面（切点和通知），将所有的通知解析并缓存起来
+3. 创建：bean初始化之后，判断当前bean是否被之前缓存的切点表达式命中，命中则创建动态代理
+4. 调用：调用时根据通知的类型决定通知和原始方法的执行顺序
+
