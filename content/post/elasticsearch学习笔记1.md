@@ -51,7 +51,7 @@ math: mathjax
 
 > 🔍 elasticsearch学习笔记1
 
-
+本节中主要介绍了elasticsearch中的一些基本概念，并于mysql中的一些概念进行了对比，分析了elasticsearch与mysql适用的场景。并且介绍了elasticsearch中索引库和文档的DSL语句的操作语法，主要是索引库的增删改查以及文档的增删改，关于文档如何进行查询，在下一节中介绍。之后还使用了java封装的RestAPI来使用java代码操作索引库和文档
 
 <!--more-->
 
@@ -90,8 +90,6 @@ elasticsearch结合kibana、Logstash、Beats，也就是elastic stack（ELK）�
 而elasticsearch是elastic stack的核心，负责存储、搜索、分析数据。
 
 <img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202402292033792.png" alt="image-20210720194230265" style="zoom:33%;" />
-
-
 
 ### 1.1.3.elasticsearch和lucene
 
