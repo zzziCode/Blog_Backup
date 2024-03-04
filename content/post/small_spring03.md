@@ -56,7 +56,7 @@ math: mathjax
 
 >🍈 small_spring03
 
-本文主要是在上一章的基础上对上一章中代码存在的问题进行改造，上一章中将bean对象的创建交给了IOC容器，利用反射创建bean对象并保存到IOC容器中，但是忽略了一点，上章中代码只能创建不携带参数的bean对象，所以这一章主要解决的问题就是创建有参数的bean对象，具体的代码在[仓库](https://github.com/zzziCode/small-spring.git)中
+本文主要是在上一章的基础上对上一章中代码存在的问题进行改造，上一章中将bean对象的创建交给了IOC容器，利用反射创建bean对象并保存到IOC容器中，但是忽略了一点，上章中代码只能创建不携带参数的bean对象，所以这一章主要解决的问题就是创建有参数的bean对象，正常的spring创建带参的bean对象时，参数应该注册到了BeanDefinition中，然后先创建然后属性填充，但是本节中我们直接一步到位，简化bean的创建过程。具体的代码在[仓库](https://github.com/zzziCode/small-spring.git)中
 
 <!--more-->
 
@@ -83,7 +83,7 @@ protected Object createBean(String beanName, BeanDefinition beanDefinition) thro
 }
 ```
 
-​		在第六行中，直接利用反射，调用`newInstance`方法创建一个bean对象，此处调用时并没有**区分**bean对象是否携带参数，导致创建出来的bean对象全都是无参的，所以需要改进的地方就在这里，将这里创建bean对象的代码进行扩充，接收bean对象的参数，就可以在创建bean对象时创建携带参数的bean对象了，其实原始spring框架中的bean对象参数是通过后期属性注入填充的，而不是创建开始就携带参数
+​		在第六行中，直接利用反射，调用`newInstance`方法创建一个bean对象，此处调用时并没有**区分**bean对象是否携带参数，导致创建出来的bean对象全都是无参的，所以需要改进的地方就在这里，将这里创建bean对象的代码进行**扩充**，接收bean对象的参数，就可以在创建bean对象时创建携带参数的bean对象了，其实原始spring框架中的bean对象参数是通过后期属性注入填充的，而不是创建开始就携带参数。在这里为了创建带参bean对象，对于构造函数的选取就需要进行匹配，根据传递的参数列表从而找到匹配的构造函数，创建bean对象时将参数传入匹配的构造函数即可
 
 ## 思路
 
@@ -94,7 +94,7 @@ protected Object createBean(String beanName, BeanDefinition beanDefinition) thro
 
 ​		为了解决第一个问题，我们可以在获取bean对象的时候就传递一些参数，这样既可以用参数区分获取的对象是谁，又可以在没有目标bean对象时，根据传递的参数创建一个目标bean对象。而对外暴露的获取bean对象的接口为`getBean`，所以第一个问题的突破口就在`getBean`函数上
 
-​		为了解决第二个问题，可以在`createBean`的函数中进行改造，引入一个扩展类，用来实现根据不同的参数创建不同的bean对象，对于创建bean对象来说，有两种方式：
+​		为了解决第二个问题，可以在`createBean`的函数中进行改造，引入一个扩展类，用来实现根据不同的参数匹配不同的构造函数，创建不同的bean对象，对于创建bean对象来说，有两种方式：
 
 1. 利用`JDK`的**反射**机制
 2. 利用`CGlib`的**字节码**机制
@@ -115,7 +115,7 @@ protected Object createBean(String beanName, BeanDefinition beanDefinition) thro
 
    ![image-20231031125857597](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310311318726.png)
 
-   > 这是本章节的核心接口
+   > 这是本章节的核心接口，有两个实现类，从而有两种创建带参bean对象的方式
 
 2. `SimpleInstantiationStrategy`：是`InstantiationStrategy`的其中一个实现类，也是项目中第一个实例化bean对象的**策略类**。内部使用JDK的**反射**机制来创建携带参数的bean对象，类的结构为：
 
@@ -149,7 +149,7 @@ protected Object createBean(String beanName, BeanDefinition beanDefinition) thro
 
    ![image-20231031130335141](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310311318731.png)
 
-   将获取Bean的操作抽取出来变成doGetBean方法的目的是为了减小代码量，因为两个重载版本的getBean方法都需要获取bean对象，只是传递的参数不一样，所以将这部分代码抽取出来，后期调用时传递的参数不一样即可：
+   将获取Bean的操作**抽取**出来变成doGetBean方法的目的是为了减小代码量，因为两个重载版本的getBean方法都需要获取bean对象，只是传递的参数不一样，所以将这部分代码抽取出来，后期调用时传递的参数不一样即可：
 
    ![image-20231031133443399](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310311334811.png)
 
@@ -160,6 +160,8 @@ protected Object createBean(String beanName, BeanDefinition beanDefinition) thro
 为了获得带参数的bean，最外层获取bean的时候就需要传递参数，根据参数的不同来匹配不同的bean对象，初始状态下，会利用传递来的参数创建一个新的带参的bean对象保存到IOC容器中并返回，整体的流程为：
 
 <img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310311313921.png" alt="未命名文件" style="zoom:67%;" />
+
+getBean方法中可以携带bean的参数，并且在创建bean实例的时候，需要找到匹配的构造函数，具体的函数逻辑在createBeanInstance中
 
 上一章中获取bean对象的流程为：
 
@@ -208,7 +210,7 @@ private Object createBeanInstance(BeanDefinition beanDefinition, String beanName
 }
 ```
 
-可以看出，核心就是利用反射得到当前bean对象的所有构造方法，然后再得到每一个构造方法 的参数列表，**对参数列表进行匹配**，需要注意的是，参数匹配时，由于`getBean`接受参数时使用的是**Object数组**，所以传递int参数时会将其转换成Integer，故而匹配参数时会出现问题，所以bean对象的构造函数中，**不使用基本类型存储参数**
+可以看出，核心就是利用反射得到当前bean对象的所有构造方法，然后再得到每一个构造方法的参数列表，**对参数列表进行匹配**，需要注意的是，参数匹配时，由于`getBean`接受参数时使用的是**Object数组**，所以传递int参数时会将其转换成Integer，故而匹配参数时会出现问题，所以bean对象的构造函数中，**不使用基本类型存储参数**，在真正的spring中，并不使用这种方式创建带参的bean对象，而是先创建再属性填充的方法，属性填充
 
 ## 总结
 

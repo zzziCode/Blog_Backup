@@ -56,13 +56,13 @@ math: mathjax
 
 >🤔 small_spring02
 
-本节中主要是以上一节为基础，并对上一节制作的IOC容器进行改良，上一节中，bean对象的实例化是手动new出来的，这一节中将bean对象的创建交给IOC容器本身，并且为了考虑扩展性，尽可能的使得每一个类都只执行一个职责，最终让整个项目变得更加健壮，关于项目的源码存放在[仓库](https://github.com/zzziCode/small-spring)中
+本节中主要是以上一节为基础，并对上一节制作的IOC容器进行改良，上一节中，bean对象的实例化是手动new出来的，这一节中将bean对象的创建交给IOC容器本身，并且为了考虑扩展性，尽可能的使得每一个类都只执行一个职责，最终让整个项目变得更加健壮，本节中创建的bean默认单例。关于项目的源码存放在[仓库](https://github.com/zzziCode/small-spring)中
 
 <!--more-->
 
 ## 思路
 
-本节就是在上一节的基础上将bean的创建交给了IOC容器，并且实现了一个单例模式的bean，具体的设计图如下：
+本节就是在上一节的基础上将bean的创建交给了IOC容器，并且实现了一个单例模式（默认）的bean，具体的设计图如下：
 
 <img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310301326330.png" alt="img" style="zoom:50%;" />
 
@@ -82,7 +82,7 @@ math: mathjax
 
    ![image-20231030101229608](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310301057546.png)
 
-   内部有一个名为`singletonObjects`的HashMap容器，主要存储已经**实例化后**的bean对象及其名称之间的映射关系，主要实现了`getSingleton(String beanName)`方法，并且还增加了一个`addSingleton(String beanName, Object singletonObject)`方法，主要作用是对外提供一个保存实例化后的bean对象的api，在`AbstractAutowireCapableBeanFactory`类中的`createBean(String beanName, BeanDefinition beanDefinition)`中使用，主要作用是将利用反射创建的bean对象保存到容器中
+   内部有一个名为`singletonObjects`的HashMap容器，主要存储已经**实例化后**的bean对象及其名称之间的映射关系，主要实现了`getSingleton(String beanName)`方法，并且还增加了一个`addSingleton(String beanName, Object singletonObject)`方法，主要作用是对外提供一个保存实例化后的bean对象的api，在`AbstractAutowireCapableBeanFactory`类中的`createBean(String beanName, BeanDefinition beanDefinition)`中使用，主要作用是将利用反射创建的bean对象保存到容器中，使的bean变成单例
 
 3. `BeanFactory`：是一个接口，提供了一个待实现的`getBean(String name)`方法，对外暴露之后，可以实现从IOC容器中尝试获取一个单例模式的bean对象
 
@@ -98,7 +98,7 @@ math: mathjax
 
    ![image-20231030102532007](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310301057549.png)
 
-   > 需要注意的是，这里创建的是最简单的bean对象，无法在创建对象时传递参数，本项目只是实现了两个功能，一个是将bean的创建交给IOC容器，一个是创建的bean保证是单例模式的，后期会实现带参的对象构建
+   > 需要注意的是，这里创建的是最简单的bean对象，无法在创建对象时传递参数，本项目只是实现了两个功能，一个是将bean的创建交给IOC容器，一个是创建的bean保证是单例模式的，后期会实现带参的对象构建，正常来说就实现创建无参的bean对象，然后进行属性填充
 
 6. `BeanDefinitionRegistry`：是一个接口，主要提供了一个待实现的`registerBeanDefinition(String beanName, BeanDefinition beanDefinition)`方法，用来注册bean，也就是将bean的名称与其类信息绑定到一起，使用一个HashMap存储，实现类在`DefaultListableBeanFactory`中，类的结构如下：
 
@@ -108,7 +108,7 @@ math: mathjax
 
    <img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310301057551.png" alt="image-20231030102957493" style="zoom:50%;" />
 
-   所有的已实现的方法被集中到了这一个类中，外部直接通过这个类调用这些已实现的api即可
+   所有的已实现的方法被集中到了这一个类中，外部直接通过这个类调用这些已实现的api即可，这就是项目结构中最底层类的好处，最底层类对外暴露，使得所有的方法都可以继承被使用
 
 ### bean的创建和获取
 
@@ -147,7 +147,7 @@ public Object getBean(String name) throws BeansException {
 
 ![image-20231030105730924](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202310301057553.png)
 
-每个类只做自己的工作，将业务逻辑区分开，核心就是整体的类图，这个类图将整个项目的功能拆分开，每个类实现一个功能，最后讲这些功能集成到同一个类中
+每个类只做自己的工作，将业务逻辑区分开，核心就是整体的类图，这个类图将整个项目的功能拆分开，每个类实现一个功能，最后将这些功能集成到同一个类中
 
 > 本文只是做了两个工作：
 >

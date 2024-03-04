@@ -850,7 +850,7 @@ GET /hotel/_search
 
 - 第一步，创建`SearchRequest`对象，指定索引库名
 
-- 第二步，利用`request.source()`构建DSL，DSL中可以包含查询、分页、排序、高亮等
+- 第二步，利用`request.source()`构建 DSL，DSL中可以包含查询、分页、排序、高亮等
   - `query()`：代表查询条件，利用`QueryBuilders.matchAllQuery()`构建一个match_all查询的DSL
 - 第三步，利用client.search()发送请求，得到响应
 
@@ -861,6 +861,8 @@ GET /hotel/_search
 另一个是`QueryBuilders`，其中包含match、term、function_score、bool等各种查询：
 
 <img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403012056962.png" alt="image-20210721215729236" style="zoom:50%;" />
+
+拼接好之后利用client向elasticsearch发送查询请求并得到结果
 
 ### 3.1.2.解析响应
 
@@ -1079,7 +1081,6 @@ void testHighlight() throws IOException {
     SearchResponse response = client.search(request, RequestOptions.DEFAULT);
     // 4.解析响应，此时响应得到的结果中，name字段就带上了<em></em>标签
     handleResponse(response);
-
 }
 ```
 
@@ -1122,7 +1123,9 @@ private void handleResponse(SearchResponse response) {
             // 根据字段名获取高亮结果
             HighlightField highlightField = highlightFields.get("name");
             if (highlightField != null) {
-                // 获取高亮值
+                // 获取高亮值，第一个就是名字
+                // 如果对all字段高亮，高亮结果数组中就有多个值，因为一个文档中的all字段拷贝了多个字段的内容，这些内容都可能高亮
+                //如果对多个字段高亮，此时就会有多个高亮结果数组
                 String name = highlightField.getFragments()[0].string();
                 // 覆盖非高亮结果
                 hotelDoc.setName(name);
@@ -1168,8 +1171,6 @@ private void handleResponse(SearchResponse response) {
 
 <img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403012056974.png" alt="image-20210721224112708" style="zoom:50%;" />
 
-
-
 由此可以知道，我们这个请求的信息如下：
 
 - 请求方式：POST
@@ -1179,9 +1180,11 @@ private void handleResponse(SearchResponse response) {
   - page：页码
   - size：每页大小
   - sortBy：排序，目前暂不实现
-- 返回值：分页查询，需要返回分页结果PageResult，包含两个属性：
+- 返回值：分页查询，需要返回分页结果`PageResult`，包含两个属性：
   - `total`：总条数
   - `List<HotelDoc>`：当前页的数据
+
+> 请求参数的格式从请求中就能看出来，返回的结果只有在前端代码中才能看出来需要什么结构的数据
 
 因此，我们实现业务的流程如下：
 
@@ -1240,6 +1243,7 @@ import java.util.List;
 
 @Data
 public class PageResult {
+    //包含当前查询到了多少条文档以及所有的文档被存储到一个容器中返回
     private Long total;
     private List<HotelDoc> hotels;
 
@@ -1432,6 +1436,7 @@ public class RequestParams {
 private void buildBasicQuery(RequestParams params, SearchRequest request) {
     // 1.构建BooleanQuery
     BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+    //下面的参数真的传递了才会拼接查询条件
     // 2.关键字搜索
     String key = params.getKey();
     if (key == null || "".equals(key)) {
@@ -1644,6 +1649,7 @@ public class HotelDoc {
         this.city = hotel.getCity();
         this.starName = hotel.getStarName();
         this.business = hotel.getBusiness();
+        //地址等于经纬度拼接
         this.location = hotel.getLatitude() + ", " + hotel.getLongitude();
         tis.pic = hotel.getPic();
     }

@@ -270,6 +270,12 @@ ApplicationContext：实现了beanFactory，在启动时就会初始化bean，�
 2. 注解：根据注解中配置的信息来实例化bean
 3. java的配置：使用@configuration代替xml文件，@Bean代替`<bean>`的配置
 
+#### BeanFactoryPostProcessor 和 BeanPostProcessor的区别
+
+1. beanFactory针对beanFactory进行扩展，bean针对bean进行扩展
+2. beanFactory的方法是在bean实例化之前调用从而修改bean的定义等信息，而后者是在bean实例化之后调用，可以进行资源的预加载，创建aop
+3. 前者可以修改beanFactory中的所有bean，后者只能修改当前bean
+
 #### javaConfig如何代替xml配置
 
 1. 使用的应用上下文不一样（ClassPathApplicationContext，AnnotationConfigApplicationContext）
@@ -458,15 +464,15 @@ ApplicationContext：实现了beanFactory，在启动时就会初始化bean，�
 
 #### beanFactory和factoryBean的区别
 
-1. beanFactory是一个factory，可以通过传入bean的名称获取bean
-2. factoryBean是一个bean，可以自定义创建管理更复杂的bean实例
+1. beanFactory是一个factory，内部有详细的bean的生命周期处理过程，从而产生各种bean
+2. factoryBean是一个bean，内部可以自定义创建管理更复杂的bean实例，bean的创建过程更多的控制权在自己手中
 
 #### spring中的设计模式
 
-1. 单例
+1. 单例：bean的单例遵循单例设计模式，
 2. 简单工厂：beanFactory获取ioc容器中的bean时
 3. 工厂方法：factoryBean自定义bean时
-4. 观察者：事件监听中，多播器是被观察者，监听器时观察者
+4. 观察者：事件监听中，多播器是被观察者，监听器是观察者
 5. 代理：aop创建动态代理
 6. 模版方法：spring对外扩展时采用
 7. 责任链：aop中一个连接点有多个增强时，就形成了一个调用链
@@ -532,3 +538,189 @@ ApplicationContext：实现了beanFactory，在启动时就会初始化bean，�
 2. 拦截器不依赖于servlet容器，过滤器依赖
 3. 拦截器只能对action请求（dispatchservlet映射的请求）起作用，而过滤器对任何请求都起作用，甚至静态资源
 4. 拦截器可以访问容器中的bean，过滤器不能访问
+
+#### springboot及其特性（优点）
+
+> springboot是**快速开发**spring应用的一个**脚手架**，目的是为了简化spring应用的开发流程
+
+1. 主流框架无配置集成，开箱即用（内置了很多了starter结合自动配置，会自动读取spring.factories文件从而完成bean的实例化）
+2. 采用javaconfig的方式，使得不再需要xml进行配置，项目从启动类开始运行
+3. 内置web容器，使得应用可以直接启动
+4. 可以管理第三方的依赖
+
+#### spring和springboot的关系和区别
+
+1. springboot是spring生态中的产品
+2. springboot是一个脚手架，可以加速spring应用的开发
+
+#### springboot的核心注解
+
+1. @SpringBootApplication：一般在启动类中，内部有三个注解，@SpringBootConfiguraton（标记启动类为配置类），@EnableAutoConfiguration（启动自动配置），@ComponentScan（自动扫描当前包及其子包）
+2. @ConditionalXXX：当出现什么条件才启用，OnBean，OnClass，OnException等等
+
+#### springboot自动配置原理
+
+1. @SpringBootApplication内部的@ComponentScan还可以完成当前包及其子包下的bean扫描并创建
+2. 使用@SpringBootApplication内部的@EnableAutoConfiguration**启动**自动配置的功能
+3. 其内部有一个@Import注解，导入的deferredImportSelector会读取所有jar包类路径下META-INF/spring.factories文件，读取所有AutoConfiguration类型的类，~~所以只要引入了starter，就会完成自动配置，其内部就有spring.factories文件~~
+4. 通过@ConditionalOnXXX注解**过滤**掉无用（不符合条件）的自动配置类
+5. 通过读取到的自动配置类生成不同的bean对象
+
+> 一般是自己项目中定义的bean先实例化，原理和一个deferredImportSelector有关，这样自动配置类中的@ConditionalOnXxX才能起到作用
+
+#### springboot中的jar包为什么可以直接运行
+
+1. 内部有一个maven-plugin插件可以将程序打包成 可运行的jar包
+2. jar包内部包含应用依赖的jar以及springboot相关的类
+3. java -jar会去找jar包里面的manifest文件，从而找到启动类并运行
+4. 启动类创建一个ClassLoader来加载所依赖的所有jar包并启动应用的main函数
+5. 读取到了所依赖的jar包，启动了main函，项目自动启动了
+
+#### springboot的启动原理
+
+> 注解
+
+1. 根据启动类上的注解来扫描当前包及其子包并注册其中的bean
+2. 根据注解来读取所有依赖的`META-INF/spring.factories`文件，该文件指明了哪些依赖可以被自动加载。
+3. 根据`importSelector`类选择加载哪些依赖，使用`conditionOn`系列注解排除掉不需要的配置文件
+4. 将剩余的配置文件所代表的bean加载到IOC容器中。
+
+> run方法
+
+1. 之后运行启动类中的run方法读取环境信息，配置信息
+2. 创建一个springApplication上下文并初始化
+3. 加载ioc容器并发布各种事件便于外部扩展（外部监听对应的事件就可以完成扩展）
+
+#### springboot内置tomcat启动原理
+
+1. 添加一个web的starter依赖，之后springboot中会有一个servlet容器工厂的自动配置类
+2. 在自动配置类中会导入一个web容器工厂，默认采用tomcat（这个根据@ConditionalOnxxx这个注解决定使用哪个web容器）
+3. 内部有一个关于tomcat的bean，在springboot启动时会创建tomcat并启动，之后挂起tomcat等待用户请求
+
+> 核心就是一个starter的依赖，有了这个依赖之后就完成了tomcat的自动配置
+
+#### springboot结合外部tomcat
+
+1. 项目打包方式设置为war
+2. 排除内置的tomcat（exclusions）
+3. 自定义一个类继承SpringBootServletInitializer 
+4. 重写内部的 configure方法
+5. 将项目的启动类传入到configure方法中
+6. 之后tomcat就会运行这个启动类
+
+#### springboot自定义stater
+
+1. 在自定义的starter中新建一个META-INF文件夹，内部存放一个spring.factories文件
+2. 里面的内容存放的键值对，主要是当前自动配置类的类名
+3. 自动配置类中包含当前程序中所需要的一些bean
+4. 如果需要一些配置属性，还可以提供一个属性配置文件
+5. 打包发布
+
+#### springboot读取配置文件的原理，配置文件加载顺序
+
+> 核心就是事件监听的机制
+
+1. springboot发布一个环境准备的事件
+2. 对应监听器（配置文件监听器）监听到之后开始读取配置文件，主要加载后缀为properties和yml的配置文件
+3.  将配置文件中的内容读取并封装供程序调用
+
+> 配置文件优先级，相同配置下，优先级高的覆盖优先级低的
+
+1. jar包同级目录下的config目录里的配置文件
+2. config目录的子目录里面的配置文件
+3. jar包同级目录下的配置文件
+4. 类路径（resources文件夹下的资源）下的config目录里的配置文件
+5. 类路径下的配置文件
+
+#### 如何在springboot上做扩展
+
+1. 由于springboot的自动配置特性，想要扩展什么，就要看哪个的自动配置类
+2. 例如要将aop创建动态代理的技术进行修改（有接口用jdk，没接口用cglib），就要看aop的自动配置类
+3. 看懂自动配置类之后才能在上面进一步扩展
+
+#### 微服务架构的优缺点
+
+1. 开发效率快，拆分之后单一职责，单个服务启动也快
+2. 由于功能进行拆分，维护起来也更加方便
+3. 弱依赖的服务出现故障可以进行熔断，并不影响其余主线业务
+4. 新增的业务不会影响现有业务的运行
+
+> 缺点
+
+1. 远程调用速度慢，影响项目运行效率
+2. 微服务过多，保持系统中数据的一致性有些困难
+3. 服务之间的关系复杂导致运维困难
+
+#### SOA，分布式，微服务之间的关系
+
+1. 分布式：将应用拆分成多块进行分布式的部署
+2. SOA：是一种面向服务的架构，所有服务注册在总线上，从总线上查找服务信息
+3. 微服务：也是一个面向服务的架构，功能拆分的粒度更细
+
+#### 微服务拆分
+
+1. 高内聚低耦合，保证服务的单一职责，尽量减少服务之间的依赖关系，服务拆分不要太细
+2. 渐进式拆分，刚开始不要拆分太细，项目推进过程中逐步拆分
+
+#### 微服务常用组件及其作用
+
+1. 注册中心：eureka，nacos，Zookeeper：服务以服务名的形式注册到注册中心
+2. 负载均衡：ribbon，loadBalancer：一种服务有多个时，通信时要讲究负载均衡
+3. 服务调用：Feign，OpenFeign：服务之间远程调用更加方便优雅
+4. 配置中心：nacos，springcloud config：主要是完成配置的热更新
+5. 服务保护：sentinel：保证系统高可用，防止雪崩，流量激增
+6. 网关：springcloud gateway：为客户端提供统一服务，鉴权，过滤，修改请求
+7. 搜索：elasticsearch：针对用户搜索的记录分析海量数据得出结果
+8. 消息队列：RabbitMQ，RocketMQ，kafka：服务之间的异步通信
+
+#### nacos注册中心核心功能原理
+
+1. 微服务一旦启动，就会将自己的信息传递给注册中心一份
+2. 其余微服务要使用其他的微服务只需要去注册中心请求就可以得到对应的微服务列表
+3. 微服务本身会固定向注册中心发送一个心跳证明自己还正常运行
+4. nacos注册中心对于非临时实例还会定期主动判断服务是否存活
+
+#### nacos配置中心
+
+1. 统一配置管理
+
+2. 配置文件的名称有要求
+
+3. 项目中要增加一个bootstrap.yml文件标记nacos的地址，这样才能从配置中心中拉取配置
+
+   <img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202312261409432.png" alt="img" style="zoom:50%;" />
+
+4. 最好只将经常热更新的配置放到配置中心，其余不变的配置放到本地
+5. 对于一个微服务，可以在不同的环境中（开发，测试，上线）共享配置文件，只要配置中心中的配置文件名不带环境名即可，就类似于本地的公共环境配置
+
+#### 服务网关gateway可以做什么
+
+1. 请求限流
+2. 权限控制
+3. 限流
+4. 统一跨域实现
+
+#### 服务雪崩
+
+由于某个微服务挂掉，导致剩下的微服务逐渐都挂掉了，这种逐渐放大的过程就叫做服务雪崩
+
+#### 服务限流
+
+为了保护系统，对访问服务的请求进行数量上的限制，保证系统不被大量的请求压垮
+
+#### 服务熔断
+
+当服务A调用服务B时，服务B出现了问题导致不可用，此时服务A为了保证自己不受影响就**切断**与服务B的通信，从而防止服务雪崩
+
+#### 服务降级
+
+提前规定好的一 种**兜底措施**，可以进行后期补救，直到服务B恢复，此时再恢复和B的通信
+
+#### Ribbon负载均衡的策略
+
+> 所有实现了IRule接口的类都是一种负载均衡的策略
+
+1. 随机选择：在一个服务列表中随机选一个
+2. 轮询：在一个服务列表的多个实例中按顺序轮
+3. 重试：如果选到了正常的服务就按轮询，如果当前服务没有正常运行或者还没运行，此时就在一定的时间内不断重试
+4. 默认跟地区有关的策略：默认先选择一个地区中的可用实例
