@@ -117,7 +117,7 @@ ApplicationContext：实现了beanFactory，在启动时就会初始化bean，�
 
 #### IOC的扩展点有哪些
 
-1. BeanPostProcessor：在实例化bean执行初始化**前后**进行额外的处理，例如进行AOP代理的创建（postProcessBeforeInitialization），属性的修改等
+1. BeanPostProcessor：在实例化bean执行初始化**前后**进行额外的处理，例如进行AOP代理的创建（postProcessBeforeInitialization，postProcessAfterInitialization），属性的修改等
 2. BeanFactoryPostProcessor：可以在bean定义后，实例化之前修改bean的定义，例如修改bean的作用域
 3. 各种Aware回调：实现这些接口可以获取特定的资源，BeanFactoryAware可以获得BeanFactory的引用，ApplicationContextAware可以获得ApplicationContext的引用，BeanNameAware可以获得bean的名称等
 4. FactoryBean：可以定制自己想要的bean
@@ -190,7 +190,7 @@ ApplicationContext：实现了beanFactory，在启动时就会初始化bean，�
 3. byType：按照set方法的形参类型来注入
 4. 构造函数：按照构造函数的参数类型来注入
 
-#### bean的生命周期回调方法
+#### bean的初始化实现方式
 
 > 分为初始化和销毁两种回调
 
@@ -474,8 +474,9 @@ ApplicationContext：实现了beanFactory，在启动时就会初始化bean，�
 3. 工厂方法：factoryBean自定义bean时
 4. 观察者：事件监听中，多播器是被观察者，监听器是观察者
 5. 代理：aop创建动态代理
-6. 模版方法：spring对外扩展时采用
+6. 模版方法：spring对外扩展时采用，父类中编写公共代码，子类中编写独有代码
 7. 责任链：aop中一个连接点有多个增强时，就形成了一个调用链
+8. 适配器：使得不兼容的类可以在一起工作，bean销毁逻辑执行时，可以分为使用注解，实现接口以及xml配置，这几种方式导致bean的类型不一样，从而无法统一的完成销毁逻辑的注册，此时定义了一个适配器来进行适配
 
 #### spring如何整合mybatis管理mapper接口
 

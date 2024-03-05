@@ -556,7 +556,7 @@ GET /heima/_doc/1
 
 **语法：**
 
-```js
+```json
 DELETE /{索引库名}/_doc/id值
 ```
 
@@ -570,8 +570,6 @@ DELETE /heima/_doc/1
 **结果：**
 
 <img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202402292033809.png" alt="image-20210720213634918" style="zoom:50%;" />
-
-
 
 ## 3.4.修改文档
 

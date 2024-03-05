@@ -51,7 +51,7 @@ toc: false
 
 > 📈 mysql面经
 
-本文中主要介绍一些mysql的面试笔记，文章持续更新
+本文中主要介绍一些mysql的面试笔记，文章持续更新，面试答案参小林coding的[图解系列](https://xiaolincoding.com/)，主要围绕一条SQL的执行过程穿插了很多面试题，并且按照章节进行介绍
 
 <!--more-->
 
@@ -642,7 +642,9 @@ innoDB中的redo log文件有两个，并且是循环写的，第一个文件写
 
 #### 两阶段提交中发生异常重启
 
-重启之后拿着redolog中记录的事务id查看binlog中是否存在这个事务id，存在两种情况：
+> 主要是看日志之间是否存在逻辑不一致的问题导致数据不一致
+
+重启之后如果redolog的状态为commit就没有出现问题，**如果不是commit**，此时拿着redolog中记录的事务id查看binlog中是否存在这个事务id，存在两种情况：
 
 1. binlog中没有redolog中记录的事务id，说明binlog没有成功记录，两份日志的记录的东西不一样，此时根据redolog回滚
 
