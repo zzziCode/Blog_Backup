@@ -7,9 +7,10 @@ date: 2024-03-05T10:56:38+08:00
 lastmod: 2024-03-05T10:56:38+08:00
 
 categories:
-  -
+  - 面试
 tags:
-  -
+  -	java
+  - 面经
 
 # 原文作者
 # Post's origin author name

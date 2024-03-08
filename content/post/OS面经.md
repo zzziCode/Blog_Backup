@@ -7,9 +7,10 @@ date: 2024-03-05T10:56:34+08:00
 lastmod: 2024-03-05T10:56:34+08:00
 
 categories:
-  -
+  - 面试
 tags:
-  -
+  -	操作系统
+  - 面经
 
 # 原文作者
 # Post's origin author name
