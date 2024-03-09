@@ -147,29 +147,21 @@ math: mathjax
 
 早期比较流行的是Hystrix框架，但目前国内实用最广泛的还是阿里巴巴的Sentinel框架，这里我们做下对比：
 
-|                | **Sentinel**                                   | **Hystrix**                   |
-| -------------- | ---------------------------------------------- | ----------------------------- |
-| 隔离策略       | 信号量隔离                                     | 线程池隔离/信号量隔离         |
-| 熔断降级策略   | 基于慢调用比例或异常比例                       | 基于失败比率                  |
-| 实时指标实现   | 滑动窗口                                       | 滑动窗口（基于 RxJava）       |
-| 规则配置       | 支持多种数据源                                 | 支持多种数据源                |
-| 扩展性         | 多个扩展点                                     | 插件的形式                    |
-| 基于注解的支持 | 支持                                           | 支持                          |
-| 限流           | 基于 QPS，支持基于调用关系的限流               | 有限的支持                    |
-| 流量整形       | 支持慢启动、匀速排队模式                       | 不支持                        |
-| 系统自适应保护 | 支持                                           | 不支持                        |
-| 控制台         | 开箱即用，可配置规则、查看秒级监控、机器发现等 | 不完善                        |
-| 常见框架的适配 | Servlet、Spring Cloud、Dubbo、gRPC  等         | Servlet、Spring Cloud Netflix |
-
-
-
-
-
-
+|                |                  **Sentinel**                  |          **Hystrix**          |
+| :------------: | :--------------------------------------------: | :---------------------------: |
+|    隔离策略    |                   信号量隔离                   |     线程池隔离/信号量隔离     |
+|  熔断降级策略  |            基于慢调用比例或异常比例            |         基于失败比率          |
+|  实时指标实现  |                    滑动窗口                    |    滑动窗口（基于 RxJava）    |
+|    规则配置    |                 支持多种数据源                 |        支持多种数据源         |
+|     扩展性     |                   多个扩展点                   |          插件的形式           |
+| 基于注解的支持 |                      支持                      |             支持              |
+|      限流      |        基于 QPS，支持基于调用关系的限流        |          有限的支持           |
+|    流量整形    |            支持慢启动、匀速排队模式            |            不支持             |
+| 系统自适应保护 |                      支持                      |            不支持             |
+|     控制台     | 开箱即用，可配置规则、查看秒级监控、机器发现等 |            不完善             |
+| 常见框架的适配 |     Servlet、Spring Cloud、Dubbo、gRPC  等     | Servlet、Spring Cloud Netflix |
 
 ## 1.3.Sentinel介绍和安装
-
-
 
 ### 1.3.1.初识Sentinel
 
@@ -185,21 +177,9 @@ Sentinel 具有以下特征:
 
 •**完善的** **SPI** **扩展点**：Sentinel 提供简单易用、完善的 SPI 扩展接口。您可以通过实现扩展接口来快速地定制逻辑。例如定制规则管理、适配动态数据源等。
 
-
-
 ### 1.3.2.安装Sentinel
 
-1）下载
-
-sentinel官方提供了UI控制台，方便我们对系统做限流设置。大家可以在[GitHub](https://github.com/alibaba/Sentinel/releases)下载。
-
-课前资料也提供了下载好的jar包：
-
-![image-20210715174252531](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239196.png)
-
-
-
-2）运行
+sentinel官方提供了UI控制台，方便我们对系统做限流设置。大家可以在[GitHub](https://github.com/alibaba/Sentinel/releases)下载对应jar包并进行安装。
 
 将jar包放到任意非中文目录，执行命令：
 
@@ -221,29 +201,17 @@ java -jar sentinel-dashboard-1.8.1.jar
 java -Dserver.port=8090 -jar sentinel-dashboard-1.8.1.jar
 ```
 
-
-
-
-
-3）访问
-
 访问http://localhost:8080页面，就可以看到sentinel的控制台了：
 
-![image-20210715190827846](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239197.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239197.png" alt="image-20210715190827846" style="zoom: 50%;" />
 
 需要输入账号和密码，默认都是：sentinel
 
-
-
 登录后，发现一片空白，什么都没有：
 
-![image-20210715191134448](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239198.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239198.png" alt="image-20210715191134448" style="zoom:50%;" />
 
 这是因为我们还没有与微服务整合。
-
-
-
-
 
 ## 1.4.微服务整合Sentinel
 
@@ -259,8 +227,6 @@ java -Dserver.port=8090 -jar sentinel-dashboard-1.8.1.jar
 </dependency>
 ```
 
-
-
 2）配置控制台
 
 修改application.yaml文件，添加下面内容：
@@ -275,23 +241,17 @@ spring:
         dashboard: localhost:8080
 ```
 
-
-
 3）访问order-service的任意端点
 
-打开浏览器，访问http://localhost:8088/order/101，这样才能触发sentinel的监控。
+打开浏览器，访问http://localhost:8088/order/101，这样才能**触发**sentinel的监控。也就是Sentinel中才能记录到这个请求
 
-然后再访问sentinel的控制台，查看效果：
+然后再访问sentinel的控制台，查看效果，发现记录了请求的基本状态
 
-![image-20210715191241799](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239199.png)
-
-
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239199.png" alt="image-20210715191241799" style="zoom: 33%;" />
 
 # 2.流量控制
 
-雪崩问题虽然有四种方案，但是限流是避免服务因突发的流量而发生故障，是对微服务雪崩问题的预防。我们先学习这种模式。
+雪崩问题虽然有四种方案，但是限流是避免服务因突发的流量而发生故障，是对微服务雪崩问题的**预防**。我们  先学习这种模式。
 
 ## 2.1.簇点链路
 
