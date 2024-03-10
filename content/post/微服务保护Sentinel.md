@@ -36,7 +36,7 @@ math: mathjax
 #  enable: false
 # 关闭文章目录功能
 # Disable table of content
-#toc: false
+toc: false
 # 绝对访问路径
 # Absolute link for visit
 #url: "微服务保护sentinel.html"
@@ -902,11 +902,11 @@ Feign整合Sentinel的步骤：
 
 - 线程池隔离
 
-- 信号量隔离（Sentinel默认采用）
+- 信号量隔离（Sentinel默认采用，使用资源访问的线程数来做信号量）
 
 如图：
 
-<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239258.png" alt="image-20210716123036937" style="zoom:50%;" />
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239258.png" alt="image-20210716123036937" style="zoom: 33%;" />
 
 **线程池隔离**：给每个服务调用业务分配一个线程池，利用线程池本身实现隔离效果
 
@@ -914,9 +914,9 @@ Feign整合Sentinel的步骤：
 
 两者的优缺点：
 
-![image-20210716123240518](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239259.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239259.png" alt="image-20210716123240518" style="zoom: 33%;" />
 
-
+线程池针对到来的请求可以全权管理，当请求超时之后，线程池主动将其断开，而信号量只能控制请求能否访问，当请求放行之后就无法管控了
 
 ### 3.2.2.sentinel的线程隔离
 
@@ -924,55 +924,43 @@ Feign整合Sentinel的步骤：
 
 在添加限流规则时，可以选择两种阈值类型：
 
-![image-20210716123411217](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239260.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239260.png" alt="image-20210716123411217" style="zoom:50%;" />
 
 - QPS：就是每秒的请求数，在快速入门中已经演示过
 
-- 线程数：是该资源能使用用的tomcat线程数的最大值。也就是通过限制线程数量，实现**线程隔离**（舱壁模式）。
-
-
+- 线程数：是该资源能使用用的tomcat线程数的最大值。也就是通过限制线程数量，实现**线程隔离**（舱壁模式）。相当于指定当前资源最多有5个线程访问
 
 **案例需求**：给 order-service服务中的UserClient的查询用户接口设置流控规则，线程数不能超过 2。然后利用jemeter测试。
-
-
 
 #### 1）配置隔离规则
 
 选择feign接口后面的流控按钮：
 
-![image-20210716123831992](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239261.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239261.png" alt="image-20210716123831992" style="zoom:50%;" />
 
 填写表单：
 
-![image-20210716123936844](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239262.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239262.png" alt="image-20210716123936844" style="zoom:50%;" />
 
 #### 2）Jmeter测试
 
 选择《阈值类型-线程数<2》：
 
-![image-20210716124229894](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239263.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239263.png" alt="image-20210716124229894" style="zoom:50%;" />
 
-一次发生10个请求，有较大概率并发线程数超过2，而超出的请求会走之前定义的失败降级逻辑。
-
-
+一次发生10个请求，有较大概率并发线程数超过2，而超出的请求会走之前定义的失败降级逻辑。返回一个空的User
 
 查看运行结果：
 
-![image-20210716124147820](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239264.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239264.png" alt="image-20210716124147820" style="zoom:50%;" />
 
-发现虽然结果都是通过了，不过部分请求得到的响应是降级返回的null信息。
-
-
-
-
+发现虽然结果都是通过了，不过部分请求得到的响应是降级返回的null信息。因为这些请求使用的线程数可能超过配置的线程数
 
 ### 3.2.3.总结
 
 线程隔离的两种手段是？
 
-- 信号量隔离
+- 信号量隔离（Sentinel默认采用）
 
 - 线程池隔离
 
@@ -984,17 +972,13 @@ Feign整合Sentinel的步骤：
 
 - 基于线程池模式，有额外开销，但隔离控制更强
 
-
-
-
-
 ## 3.3.熔断降级
 
 熔断降级是解决雪崩问题的重要手段。其思路是由**断路器**统计服务调用的异常比例、慢请求比例，如果超出阈值则会**熔断**该服务。即拦截访问该服务的一切请求；而当服务恢复时，断路器会放行访问该服务的请求。
 
 断路器控制熔断和放行是通过状态机来完成的：
 
-![image-20210716130958518](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239265.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239265.png" alt="image-20210716130958518" style="zoom:50%;" />
 
 状态机包括三个状态：
 
@@ -1004,47 +988,37 @@ Feign整合Sentinel的步骤：
   - 请求成功：则切换到closed状态
   - 请求失败：则切换到open状态
 
+> 相当于内部会进行熔断，然后熔断时间过去时候尝试放开该服务的限制
 
-
-断路器熔断策略有三种：慢调用、异常比例、异常数
-
-
+断路器熔断策略有**三种**：慢调用、异常比例、异常数
 
 ### 3.3.1.慢调用
 
-**慢调用**：业务的响应时长（RT）大于指定时长的请求认定为慢调用请求。在指定时间内，如果请求数量超过设定的最小数量，慢调用比例大于设定的阈值，则触发熔断。
+**慢调用**：业务的响应时长（RT）大于**指定**时长的请求<u>认定为</u>慢调用请求。在指定时间内，如果请求数量超过**设定**的最小数量，慢调用比例大于设定的阈值，则触发熔断。
 
 例如：
 
-![image-20210716145934347](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239266.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239266.png" alt="image-20210716145934347" style="zoom: 50%;" />
 
-解读：RT超过500ms的调用是慢调用，统计最近10000ms内的请求，如果请求量超过10次，并且慢调用比例不低于0.5，则触发熔断，熔断时长为5秒。然后进入half-open状态，放行一次请求做测试。
-
-
+解读：RT超过500ms的调用是慢调用，统计最近10000ms内的10次请求，如果慢调用比例不低于0.5，也就是有一半以上的请求都是慢调用。此时则触发熔断，熔断时长为5秒。然后进入half-open状态，放行一次请求做测试。
 
 **案例**
 
 需求：给 UserClient的查询用户接口设置降级规则，慢调用的RT阈值为50ms，统计时间为1秒，最小请求数量为5，失败阈值比例为0.4，熔断时长为5
 
-
-
 #### 1）设置慢调用
 
 修改user-service中的/user/{id}这个接口的业务。通过休眠模拟一个延迟时间：
 
-![image-20210716150234787](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239267.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239267.png" alt="image-20210716150234787" style="zoom:50%;" />
 
 此时，orderId=101的订单，关联的是id为1的用户，调用时长为60ms：
 
-![image-20210716150510956](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239268.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239268.png" alt="image-20210716150510956" style="zoom:50%;" />
 
 orderId=102的订单，关联的是id为2的用户，调用时长为非常短；
 
-![image-20210716150605208](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239269.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239269.png" alt="image-20210716150605208" style="zoom:50%;" />
 
 #### 2）设置熔断规则
 
@@ -1054,29 +1028,21 @@ orderId=102的订单，关联的是id为2的用户，调用时长为非常短；
 
 规则：
 
-![image-20210716150740434](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239271.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239271.png" alt="image-20210716150740434" style="zoom:50%;" />
 
-超过50ms的请求都会被认为是慢请求
-
-
+超过50ms的请求都会被认为是慢请求，当前配置说明在1000ms内，如果请求量超过5次，并且2次以上的请求都是慢调用，此时触发熔断，熔断5s之后尝试关闭断路器
 
 #### 3）测试
 
 在浏览器访问：http://localhost:8088/order/101，快速刷新5次，可以发现：
 
-![image-20210716150911004](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239272.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239272.png" alt="image-20210716150911004" style="zoom:50%;" />
 
 触发了熔断，请求时长缩短至5ms，快速失败了，并且走降级逻辑，返回的null
 
-
-
-在浏览器访问：http://localhost:8088/order/102，竟然也被熔断了：
+在浏览器访问：http://localhost:8088/order/102，竟然也被熔断了，这是因为此时userClient被断路器熔断了，不是慢调用的请求也会被阻塞：
 
 ![image-20210716151107785](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239273.png)
-
-
-
-
 
 ### 3.3.2.异常比例、异常数
 
@@ -1086,21 +1052,17 @@ orderId=102的订单，关联的是id为2的用户，调用时长为非常短；
 
 ![image-20210716131430682](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239274.png)
 
-解读：统计最近1000ms内的请求，如果请求量超过10次，并且异常比例不低于0.4，则触发熔断。
+解读：统计最近1000ms内的10次请求，如果异常比例不低于0.4，则触发熔断。5s之后尝试关闭断路器
 
 一个异常数设置：
 
 ![image-20210716131522912](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239275.png)
 
-解读：统计最近1000ms内的请求，如果请求量超过10次，并且异常比例不低于2次，则触发熔断。
-
-
+解读：统计最近1000ms内的10次请求，如果异常比例不低于2次，则触发熔断。5s之后尝试关闭断路器
 
 **案例**
 
 需求：给 UserClient的查询用户接口设置降级规则，统计时间为1秒，最小请求数量为5，失败阈值比例为0.4，熔断时长为5s
-
-
 
 #### 1）设置异常请求
 
@@ -1109,8 +1071,6 @@ orderId=102的订单，关联的是id为2的用户，调用时长为非常短；
 ![image-20210716151348183](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239276.png)
 
 也就是说，id 为 2时，就会触发异常
-
-
 
 #### 2）设置熔断规则
 
@@ -1124,23 +1084,17 @@ orderId=102的订单，关联的是id为2的用户，调用时长为非常短；
 
 在5次请求中，只要异常比例超过0.4，也就是有2次以上的异常，就会触发熔断。
 
-
-
 ####  3）测试
 
-在浏览器快速访问：http://localhost:8088/order/102，快速刷新5次，触发熔断：
+在浏览器快速访问：http://localhost:8088/order/102，快速刷新5次，因为访问的是102，所以会出现异常，此时触发熔断：
 
 ![image-20210716151722916](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239278.png)
 
-
-
-此时，我们去访问本来应该正常的103：
+此时，我们去访问本来应该正常的103，因为内部没有异常，但是也会被断路器阻塞：
 
 ![image-20210716151844817](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239279.png)
 
-
-
-
+> 这是因为userClient内部被断路器熔断，5s之后才尝试关闭断路器
 
 # 4.授权规则
 
@@ -1160,21 +1114,21 @@ orderId=102的订单，关联的是id为2的用户，调用时长为非常短；
 
 ![image-20210716152010750](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239280.png)
 
-- 资源名：就是受保护的资源，例如/order/{orderId}
+- 资源名：就是受保护的资源，例如/order/{orderId}，相当于访问当前资源的请求会受到规则的控制，加入白名单或者黑名单
 
-- 流控应用：是来源者的名单，
+- 流控应用：是来源者的名单
   - 如果是勾选白名单，则名单中的来源被许可访问。
   - 如果是勾选黑名单，则名单中的来源被禁止访问。
 
 比如：
 
-![image-20210716152349191](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239281.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239281.png" alt="image-20210716152349191" style="zoom:50%;" />
 
 我们允许请求从gateway到order-service，不允许浏览器访问order-service，那么白名单中就要填写**网关的来源名称（origin）**。
 
 ### 4.1.2.如何获取origin
 
-Sentinel是通过RequestOriginParser这个接口的parseOrigin来获取请求的来源的。
+Sentinel是通过RequestOriginParser这个接口的parseOrigin来获取请求的来源的。也就是说这个方法会被Sentinel自动调用，根据返回值判断当前请求的来源是不是一样的
 
 ```java
 public interface RequestOriginParser {
@@ -1189,11 +1143,7 @@ public interface RequestOriginParser {
 
 默认情况下，sentinel不管请求者从哪里来，返回值永远是default，也就是说一切请求的来源都被认为是一样的值default。
 
-
-
 因此，我们需要自定义这个接口的实现，让**不同的请求，返回不同的origin**。
-
-
 
 例如order-service服务中，我们定义一个RequestOriginParser的实现类：
 
@@ -1212,7 +1162,7 @@ public class HeaderOriginParser implements RequestOriginParser {
     public String parseOrigin(HttpServletRequest request) {
         // 1.获取请求头
         String origin = request.getHeader("origin");
-        // 2.非空判断
+        // 2.非空判断，当到来的请求头为空，此时手动加上来源                              
         if (StringUtils.isEmpty(origin)) {
             origin = "blank";
         }
@@ -1221,9 +1171,9 @@ public class HeaderOriginParser implements RequestOriginParser {
 }
 ```
 
-我们会尝试从request-header中获取origin值。
+我们会尝试从request-header中获取origin值。如果此时网关过来的请求加上了origin，但是不从网关过来的请求不加，此时就可以完成区分
 
-
+为了完成只给网关过来的请求加上请求头，我们需要使用到网关的过滤器，从网关过来的请求统一加上一个请求头即可
 
 ### 4.1.3.给网关添加请求头
 
@@ -1238,14 +1188,13 @@ spring:
   cloud:
     gateway:
       default-filters:
+      # 这里给所有到达网关的请求加上名为origin的请求头，值为gateway
         - AddRequestHeader=origin,gateway
       routes:
        # ...略
 ```
 
-这样，从gateway路由的所有请求都会带上origin头，值为gateway。而从其它地方到达微服务的请求则没有这个头。
-
-
+这样，从gateway路由的**所有请求**都会带上origin头，值为gateway。而从其它地方到达微服务的请求则没有这个头。这样我们就可以单单针对gateway设置白名单，其余请求就无法访问资源了
 
 ### 4.1.4.配置授权规则
 
@@ -1263,25 +1212,15 @@ spring:
 
 通过网关访问：
 
-![image-20210716153434095](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239285.png)
-
-
-
-
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239285.png" alt="image-20210716153434095" style="zoom:50%;" />
 
 ## 4.2.自定义异常结果
 
 默认情况下，发生限流、降级、授权拦截时，都会抛出异常到调用方。异常结果都是flow limmiting（限流）。这样不够友好，无法得知是限流还是降级还是授权拦截。
 
-
-
 ### 4.2.1.异常类型
 
-
-
-而如果要自定义异常时的返回结果，需要实现BlockExceptionHandler接口：
+而如果要自定义异常时的返回结果，需要实现BlockExceptionHandler接口，有了这个方法之后，出现异常之后会经过这个方法进一步处理，我们可以在方法里面写入不同的描述信息，这需要根据异常的类型判断：
 
 ```java
 public interface BlockExceptionHandler {
@@ -1307,8 +1246,6 @@ public interface BlockExceptionHandler {
 | DegradeException     | 降级异常           |
 | AuthorityException   | 授权规则异常       |
 | SystemBlockException | 系统规则异常       |
-
-
 
 ### 4.2.2.自定义异常处理
 
@@ -1353,8 +1290,6 @@ public class SentinelExceptionHandler implements BlockExceptionHandler {
 }
 ```
 
-
-
 重启测试，在不同场景下，会返回不同的异常消息.
 
 限流：
@@ -1365,13 +1300,9 @@ public class SentinelExceptionHandler implements BlockExceptionHandler {
 
 ![image-20210716154012736](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239287.png)
 
-
-
-
-
 # 5.规则持久化
 
-现在，sentinel的所有规则都是内存存储，重启后所有规则都会丢失。在生产环境下，我们必须确保这些规则的持久化，避免丢失。
+现在，sentinel的所有规则都是内存存储，重启后所有规则都会丢失。在生产环境下，我们必须确保这些规则的**持久化**，避免丢失。
 
 ## 5.1.规则管理模式
 
@@ -1381,30 +1312,14 @@ public class SentinelExceptionHandler implements BlockExceptionHandler {
 - pull模式
 - push模式
 
-
-
 ### 5.1.1.pull模式
 
 pull模式：控制台将配置的规则推送到Sentinel客户端，而客户端会将配置规则保存在本地文件或数据库中。以后会定时去本地文件或数据库中查询，更新本地规则。
 
-![image-20210716154155238](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239288.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239288.png" alt="image-20210716154155238" style="zoom:50%;" />
 
 ### 5.1.2.push模式
 
-push模式：控制台将配置规则推送到远程配置中心，例如Nacos。Sentinel客户端监听Nacos，获取配置变更的推送消息，完成本地配置更新。
+push模式：控制台将配置规则推送到**远程**配置中心，例如Nacos。Sentinel客户端监听Nacos，获取配置变更的推送消息，完成本地配置更新。
 
-![image-20210716154215456](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239289.png)
-
-
-
-
-
-
-
-## 5.2.实现push模式
-
-详细步骤可以参考课前资料的《sentinel规则持久化》：
-
-![image-20210716154255466](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239290.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239289.png" alt="image-20210716154215456" style="zoom:50%;" />
