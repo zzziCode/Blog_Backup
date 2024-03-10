@@ -251,21 +251,17 @@ spring:
 
 # 2.流量控制
 
-雪崩问题虽然有四种方案，但是限流是避免服务因突发的流量而发生故障，是对微服务雪崩问题的**预防**。我们  先学习这种模式。
+雪崩问题虽然有四种方案，但是限流是避免服务因突发的流量而发生故障，是对微服务雪崩问题的**预防**。我们 先学习这种模式。
 
 ## 2.1.簇点链路
 
-当请求进入微服务时，首先会访问DispatcherServlet，然后进入Controller、Service、Mapper，这样的一个调用链就叫做**簇点链路**。簇点链路中被监控的每一个接口就是一个**资源**。
+当请求进入微服务时，首先会访问DispatcherServlet，然后进入Controller、Service、Mapper，这样的一个内部的调用链就叫做**簇点链路**。簇点链路中被监控的每一个接口（可以理解为controller中的一个方法）就是一个**资源**。
 
 默认情况下sentinel会监控SpringMVC的每一个端点（Endpoint，也就是controller中的方法），因此SpringMVC的每一个端点（Endpoint）就是调用链路中的一个资源。
 
-
-
 例如，我们刚才访问的order-service中的OrderController中的端点：/order/{orderId}
 
-![image-20210715191757319](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239200.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239200.png" alt="image-20210715191757319" style="zoom:50%;" />
 
 流控、熔断等都是针对簇点链路中的资源来设置的，因此我们可以点击对应资源后面的按钮来设置规则：
 
@@ -274,95 +270,47 @@ spring:
 - 热点：热点参数限流，是限流的一种
 - 授权：请求的权限控制
 
-
-
-
-
 ## 2.1.快速入门
-
-
 
 ### 2.1.1.示例
 
-点击资源/order/{orderId}后面的流控按钮，就可以弹出表单。
+点击资源/order/{orderId}后面的**流控**按钮，就可以弹出表单。
 
-![image-20210715191757319](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239200.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239200.png" alt="image-20210715191757319" style="zoom:50%;" />
 
 表单中可以填写限流规则，如下：
 
-![image-20210715192010657](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239201.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239201.png" alt="image-20210715192010657" style="zoom:50%;" />
 
-其含义是限制 /order/{orderId}这个资源的单机QPS为1，即每秒只允许1次请求，超出的请求会被拦截并报错。
-
-
+其含义是限制 `/order/{orderId}`这个资源的单机QPS为1，即每秒只允许1次请求，超出的请求会被拦截并报错。
 
 ### 2.1.2.练习：
 
-需求：给 /order/{orderId}这个资源设置流控规则，QPS不能超过 5，然后测试。
-
-
-
-
-
-
+需求：给 `/order/{orderId}`这个资源设置流控规则，QPS不能超过 5，然后测试。
 
 1）首先在sentinel控制台添加限流规则
 
-![image-20210715192455429](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239202.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239202.png" alt="image-20210715192455429" style="zoom:50%;" />
 
-2）利用jmeter测试
-
-如果没有用过jmeter，可以参考课前资料提供的文档《Jmeter快速入门.md》
-
-课前资料提供了编写好的Jmeter测试样例：
-
-![image-20210715200431615](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239203.png)
-
-打开jmeter，导入课前资料提供的测试样例：
-
-![image-20210715200537171](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239204.png)
-
-选择：
-
-![image-20210715200635414](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239205.png)
-
-20个用户，2秒内运行完，QPS是10，超过了5.
-
-选中`流控入门，QPS<5`右键运行：
-
-![image-20210715200804594](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239206.png)
-
-
-
-> 注意，不要点击菜单中的执行按钮来运行。
-
-
+2）利用jmeter测试，模拟`order/{orderId}`一秒钟到了10个请求
 
 结果：
 
-![image-20210715200853671](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239207.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239207.png" alt="image-20210715200853671" style="zoom:43%;" />
 
-可以看到，成功的请求每次只有5个
-
-
-
-
+可以看到，每秒成功的请求每次只有5个
 
 ## 2.2.流控模式
 
 在添加限流规则时，点击高级选项，可以选择三种**流控模式**：
 
 - 直接：统计当前资源的请求，触发阈值时对当前资源直接限流，也是默认的模式
-- 关联：统计与当前资源相关的另一个资源，触发阈值时，对当前资源限流
+- 关联：统计与当前资源**相关**的另一个资源，触发阈值时，对当前资源限流
 - 链路：统计从指定链路访问到本资源的请求，触发阈值时，对指定链路限流
 
-![image-20210715201827886](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239208.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239208.png" alt="image-20210715201827886" style="zoom: 50%;" />
 
 快速入门测试的就是直接模式。
-
-
 
 ### 2.2.1.关联模式
 
@@ -370,23 +318,17 @@ spring:
 
 **配置规则**：
 
-![image-20210715202540786](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239209.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239209.png" alt="image-20210715202540786" style="zoom:50%;" />
 
-**语法说明**：当/write资源访问量触发阈值时，就会对/read资源限流，避免影响/write资源。
-
-
+**语法说明**：当/write资源访问量触发阈值时，就会对/read资源限流，**避免影响**/write资源。
 
 **使用场景**：比如用户支付时需要修改订单状态，同时用户要查询订单。查询和修改操作会争抢数据库锁，产生竞争。业务需求是优先支付和更新订单的业务，因此当修改订单业务触发阈值时，需要对查询订单业务限流。
-
-
 
 **需求说明**：
 
 - 在OrderController新建两个端点：/order/query和/order/update，无需实现业务
 
 - 配置流控规则，当/order/ update资源被访问的QPS超过5时，对/order/query请求限流
-
-
 
 1）定义/order/query端点，模拟订单查询
 
@@ -408,21 +350,17 @@ public String updateOrder() {
 
 重启服务，查看sentinel控制台的簇点链路：
 
-![image-20210716101805951](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239210.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239210.png" alt="image-20210716101805951" style="zoom:50%;" />
 
 3）配置流控规则
 
-对哪个端点限流，就点击哪个端点后面的按钮。我们是对订单查询/order/query限流，因此点击它后面的按钮：
+**对哪个端点限流，就点击哪个端点后面的按钮**。我们是对订单查询/order/query限流，因此点击它后面的按钮：
 
 ![image-20210716101934499](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239211.png)
 
 在表单中填写流控规则：
 
-![image-20210716102103814](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239212.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239212.png" alt="image-20210716102103814" style="zoom:50%;" />
 
 4）在Jmeter测试
 
@@ -436,7 +374,7 @@ public String updateOrder() {
 
 ![image-20210716102532554](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239214.png)
 
-请求的目标是/order/update，这样这个断点就会触发阈值。
+请求的目标是/order/update，这样这个断点就会触发阈值。触发阈值之后，就会对query进行限流，但此时update不受任何影响
 
 但限流的目标是/order/query，我们在浏览器访问，可以发现：
 
@@ -444,15 +382,11 @@ public String updateOrder() {
 
 确实被限流了。
 
-
-
 5）总结
 
-![image-20210716103143002](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239216.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239216.png" alt="image-20210716103143002" style="zoom:50%;" />
 
-
-
-
+此时我们可以对优先级低的资源进行限流，当关联的优先级高的资源触发阈值之后，优先级低的资源就会限流，例如我们对query进行限流，当update的QPS触发阈值时，此时就会对query触发限流
 
 ### 2.2.2.链路模式
 
@@ -484,8 +418,6 @@ public String updateOrder() {
 
 4. 给queryGoods设置限流规则，从/order/query进入queryGoods的方法限制QPS必须小于2
 
-
-
 实现：
 
 #### 1）添加查询商品方法
@@ -497,8 +429,6 @@ public void queryGoods(){
     System.err.println("查询商品");
 }
 ```
-
-
 
 #### 2）查询订单时，查询商品
 
@@ -515,8 +445,6 @@ public String queryOrder() {
 }
 ```
 
-
-
 #### 3）新增订单，查询商品
 
 在order-service的OrderController中，修改/order/save端点，模拟新增订单：
@@ -532,11 +460,11 @@ public String saveOrder() {
 }
 ```
 
-
+> 此时相当于有两个链路都在访问queryGoods
 
 #### 4）给查询商品添加资源标记
 
-默认情况下，OrderService中的方法是不被Sentinel监控的，需要我们自己通过注解来标记要监控的方法。
+**默认**情况下，OrderService中的方法是**不被Sentinel监控**的，不被监控的资源是无法配置限流规则的，所以需要我们自己通过注解来标记要监控的方法。**手动指定**sentinel要监控当前资源
 
 给OrderService的queryGoods方法添加@SentinelResource注解：
 
@@ -544,14 +472,12 @@ public String saveOrder() {
 @SentinelResource("goods")
 public void queryGoods(){
     System.err.println("查询商品");
-}
+}、
 ```
 
+链路模式中，是对不同来源的两个链路做监控。但是sentinel默认会给进入SpringMVC的所有请求设置同一个root资源，也就是都来自同一条链路，会导致链路模式的流控规则失效。
 
-
-链路模式中，是对不同来源的两个链路做监控。但是sentinel默认会给进入SpringMVC的所有请求设置同一个root资源，会导致链路模式失效。
-
-我们需要关闭这种对SpringMVC的资源聚合，修改order-service服务的application.yml文件：
+我们需要**关闭**这种对SpringMVC的资源聚合，修改order-service服务的application.yml文件：
 
 ```yaml
 spring:
@@ -560,23 +486,17 @@ spring:
       web-context-unify: false # 关闭context整合
 ```
 
-重启服务，访问/order/query和/order/save，可以查看到sentinel的簇点链路规则中，出现了新的资源：
+重启服务，访问/order/query和/order/save，可以查看到sentinel的簇点链路规则中，出现了新的资源，看出两条链路中都访问了goos资源：
 
-![image-20210716105227163](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239218.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239218.png" alt="image-20210716105227163" style="zoom:50%;" />
 
 #### 5）添加流控规则
 
 点击goods资源后面的流控按钮，在弹出的表单中填写下面信息：
 
-![image-20210716105408723](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239219.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239219.png" alt="image-20210716105408723" style="zoom:50%;" />
 
-
-
-只统计从/order/query进入/goods的资源，QPS阈值为2，超出则被限流。
-
-
+只统计从/order/query进入/goods的资源，QPS阈值为2，超出**则被限流**。对于/order/save进入/goods的请求不做限流
 
 #### 6）Jmeter测试
 
@@ -588,27 +508,23 @@ spring:
 
 一个http请求是访问/order/save：
 
-![image-20210716105812789](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239221.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239221.png" alt="image-20210716105812789" style="zoom:50%;" />
 
 运行的结果：
 
-![image-20210716110027064](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239222.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239222.png" alt="image-20210716110027064" style="zoom:50%;" />
 
-完全不受影响。
-
-
+**完全不受影响**。
 
 另一个是访问/order/query：
 
-![image-20210716105855951](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239224.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239224.png" alt="image-20210716105855951" style="zoom:50%;" />
 
 运行结果：
 
-![image-20210716105956401](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239225.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239225.png" alt="image-20210716105956401" style="zoom:50%;" />
 
-每次只有2个通过。
-
-
+每次只有2个通过。相当于这条链路中的请求超过阈值就限流
 
 ### 2.2.3.总结
 
@@ -616,89 +532,71 @@ spring:
 
 •直接：对当前资源限流
 
-•关联：高优先级资源触发阈值，对低优先级资源限流。
+•关联：高优先级资源触发阈值，对低优先级资源限流，避免**影响高优先级**的请求
 
-•链路：阈值统计时，只统计从指定资源进入当前资源的请求，是对请求来源的限流
-
-
+•链路：阈值统计时，只统计从指定资源进入当前资源的请求，是对请求来源的限流，防止恶意请求，相当于这个来源的请求**我讨厌**，对其进行限流
 
 ## 2.3.流控效果
 
 在流控的高级选项中，还有一个流控效果选项：
 
-![image-20210716110225104](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239226.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239226.png" alt="image-20210716110225104" style="zoom:50%;" />
 
 流控效果是指请求达到流控阈值时应该采取的措施，包括三种：
 
 - 快速失败：达到阈值后，新的请求会被立即拒绝并抛出FlowException异常。是默认的处理方式。
 
-- warm up：预热模式，对超出阈值的请求同样是拒绝并抛出异常。但这种模式阈值会动态变化，从一个较小值逐渐增加到最大阈值。
+- warm up：预热模式，对超出阈值的请求同样是拒绝并抛出异常。但这种模式阈值会动态变化，从一个较小值逐渐增加到最大阈值。这种是针对服务冷启动的一种措施，服务刚启动时阈值较低，启动一段时间过后阈值才会逐步升高
 
 - 排队等待：让所有的请求按照先后次序排队执行，两个请求的间隔不能小于指定时长
 
-
-
 ### 2.3.1.warm up
 
-阈值一般是一个微服务能承担的最大QPS，但是一个服务刚刚启动时，一切资源尚未初始化（**冷启动**），如果直接将QPS跑到最大值，可能导致服务瞬间宕机。
+阈值一般是一个微服务能承担的最大QPS，但是一个服务刚刚启动时，一切资源尚未初始化（**冷启动**），如果直接将QPS跑到最大值，可能导致服务**瞬间宕机**。
 
-
-
-warm up也叫**预热模式**，是应对服务冷启动的一种方案。请求阈值初始值是 maxThreshold / coldFactor，持续指定时长后，逐渐提高到maxThreshold值。而coldFactor的默认值是3.
+warm up也叫**预热模式**，是应对服务冷启动的一种方案。请求阈值初始值是 maxThreshold / coldFactor，持续指定时长后，逐渐提高到maxThreshold值。而coldFactor的**默认值是3.**
 
 例如，我设置QPS的maxThreshold为10，预热时间为5秒，那么初始阈值就是 10 / 3 ，也就是3，然后在5秒后逐渐增长到10.
 
-![image-20210716110629796](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239227.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239227.png" alt="image-20210716110629796" style="zoom:50%;" />
 
 **案例**
 
-需求：给/order/{orderId}这个资源设置限流，最大QPS为10，利用warm up效果，预热时长为5秒
-
-
+需求：给/order/{orderId}这个资源设置限流，最大QPS为10，利用warm up效果，预热时长为5秒，也就是说初始阈值为3，在5秒内逐渐增加到10
 
 #### 1）配置流控规则：
 
-![image-20210716111012387](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239228.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239228.png" alt="image-20210716111012387" style="zoom:50%;" />
 
 #### 2）Jmeter测试
 
 选择《流控效果，warm up》：
 
-![image-20210716111136699](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239229.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239229.png" alt="image-20210716111136699" style="zoom:50%;" />
 
 QPS为10.
 
 刚刚启动时，大部分请求失败，成功的只有3个，说明QPS被限定在3：
 
-![image-20210716111303701](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239230.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239230.png" alt="image-20210716111303701" style="zoom:50%;" />
 
-随着时间推移，成功比例越来越高：
+随着时间推移，成功比例**越来越高**：
 
-![image-20210716111404717](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239231.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239231.png" alt="image-20210716111404717" style="zoom:50%;" />
 
 到Sentinel控制台查看实时监控：
 
-![image-20210716111526480](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239232.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239232.png" alt="image-20210716111526480" style="zoom:50%;" />
 
 一段时间后：
 
-![image-20210716111658541](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239233.png)
-
-
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239233.png" alt="image-20210716111658541" style="zoom:50%;" />
 
 ### 2.3.2.排队等待
 
 当请求超过QPS阈值时，快速失败和warm up 会拒绝新的请求并抛出异常。
 
-而排队等待则是让所有请求进入一个队列中，然后按照阈值允许的时间间隔依次执行。后来的请求必须等待前面执行完成，如果请求预期的等待时间超出最大时长，则会被拒绝。
+而排队等待则是让所有请求进入一个**队列**中，然后按照阈值允许的时间间隔依次执行。后来的请求必须等待前面执行完成，如果请求预期的等待时间超出最大时长，则会被拒绝。
 
 工作原理
 
@@ -711,39 +609,29 @@ QPS为10.
 - 第6个请求的**预期等待时长** =  200 * （6 - 1） = 1000ms
 - 第12个请求的预期等待时长 = 200 * （12-1） = 2200ms
 
-
-
 现在，第1秒同时接收到10个请求，但第2秒只有1个请求，此时QPS的曲线这样的：
 
-![image-20210716113147176](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239234.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239234.png" alt="image-20210716113147176" style="zoom:50%;" />
 
 如果使用队列模式做流控，所有进入的请求都要排队，以固定的200ms的间隔执行，QPS会变的很平滑：
 
-![image-20210716113426524](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239235.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239235.png" alt="image-20210716113426524" style="zoom:50%;" />
 
 平滑的QPS曲线，对于服务器来说是更友好的。
 
-
-
 **案例**
 
-需求：给/order/{orderId}这个资源设置限流，最大QPS为10，利用排队的流控效果，超时时长设置为5s
-
-
+需求：给/order/{orderId}这个资源设置限流，最大QPS为10，利用排队的流控效果，超时时长设置为5s，也就是等待时间超过5s的请求才会被拒绝
 
 #### 1）添加流控规则
 
-![image-20210716114048918](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239236.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239236.png" alt="image-20210716114048918" style="zoom:50%;" />
 
 #### 2）Jmeter测试
 
 选择《流控效果，队列》：
 
-![image-20210716114243558](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239237.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239237.png" alt="image-20210716114243558" style="zoom:50%;" />
 
 QPS为15，已经超过了我们设定的10。
 
@@ -751,71 +639,59 @@ QPS为15，已经超过了我们设定的10。
 
 但是我们看看队列模式的运行结果：
 
-![image-20210716114429361](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239238.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239238.png" alt="image-20210716114429361" style="zoom:50%;" />
 
 全部都通过了。
 
 再去sentinel查看实时监控的QPS曲线：
 
-![image-20210716114522935](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239239.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239239.png" alt="image-20210716114522935" style="zoom:50%;" />
 
 QPS非常平滑，一致保持在10，但是超出的请求没有被拒绝，而是放入队列。因此**响应时间**（等待时间）会越来越长。
 
 当队列满了以后，才会有部分请求失败：
 
-![image-20210716114651137](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239240.png)
-
-
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239240.png" alt="image-20210716114651137" style="zoom:50%;" />
 
 ### 2.3.3.总结
 
 流控效果有哪些？
 
-- 快速失败：QPS超过阈值时，拒绝新的请求
+- 快速失败：QPS超过阈值时，**直接拒绝**新的请求
 
-- warm up： QPS超过阈值时，拒绝新的请求；QPS阈值是逐渐提升的，可以避免冷启动时高并发导致服务宕机。
+- warm up： QPS超过阈值时，拒绝新的请求；QPS阈值是**逐渐提升**的，可以避免冷启动时高并发导致服务宕机。
 
-- 排队等待：请求会进入队列，按照阈值允许的时间间隔依次执行请求；如果请求预期等待时长大于超时时间，直接拒绝
-
-
-
-
+- 排队等待：请求会进入队列，按照阈值允许的时间间隔**依次执行**请求；如果请求预期等待时长**大于超时时间才拒绝**
 
 ## 2.4.热点参数限流
 
-之前的限流是统计访问某个资源的所有请求，判断是否超过QPS阈值。而热点参数限流是**分别统计参数值相同的请求**，判断是否超过QPS阈值。
+之前的限流是统计访问某个资源的所有请求，判断是否超过QPS阈值。而热点参数限流是**分别统计参数值相同的请求**，判断是否超过QPS阈值。也就是针对一个资源来说，进行更细粒度的统计，参数相同的才统计到一起
 
 ### 2.4.1.全局参数限流
 
 例如，一个根据id查询商品的接口：
 
-![image-20210716115014663](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239241.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239241.png" alt="image-20210716115014663" style="zoom: 50%;" />
 
 访问/goods/{id}的请求中，id参数值会有变化，热点参数限流会根据参数值分别统计QPS，统计结果：
 
-![image-20210716115131463](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239242.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239242.png" alt="image-20210716115131463" style="zoom:50%;" />
 
-当id=1的请求触发阈值被限流时，id值不为1的请求不受影响。
-
-
+当id=1的请求触发阈值被限流时，id值不为1的请求不受影响。相当于访问资源不被阻塞
 
 配置示例：
 
-![image-20210716115232426](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239243.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239243.png" alt="image-20210716115232426" style="zoom:50%;" />
 
-代表的含义是：对hot这个资源的0号参数（第一个参数）做统计，每1秒**相同参数值**的请求数不能超过5
-
-
+代表的含义是：对hot这个资源的0号参数（第一个参数）做统计，每1秒**相同参数值**的请求数不能超过5，如果一秒内到达的参数分别是[1,1,1,1,2]，此时不会触发限流
 
 ### 2.4.2.热点参数限流
 
-刚才的配置中，对查询商品这个接口的所有商品一视同仁，QPS都限定为5.
+刚才的配置中，对查询商品这个接口的所有商品一视同仁，QPS都限定为5，也就是每种商品的访问频次可能不一样，但是我们都设置了QPS为5，此时对于经常访问的商品来说就不友好
 
 而在实际开发中，可能部分商品是热点商品，例如秒杀商品，我们希望这部分商品的QPS限制与其它商品不一样，高一些。那就需要配置热点参数限流的高级选项了：
 
-![image-20210716115717523](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239244.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239244.png" alt="image-20210716115717523" style="zoom:50%;" />
 
 结合上一个配置，这里的含义是对0号的long类型参数限流，每1秒相同参数的QPS不能超过5，有两个例外：
 
@@ -823,7 +699,7 @@ QPS非常平滑，一致保持在10，但是超出的请求没有被拒绝，而
 
 •如果参数值是101，则每1秒允许的QPS为15
 
-
+相当于针对不同参数设置不同的 QPS
 
 ### 2.4.4.案例
 
@@ -835,19 +711,13 @@ QPS非常平滑，一致保持在10，但是超出的请求没有被拒绝，而
 
 •给103这个参数设置例外：每1秒请求量不超过10
 
-
-
-**注意事项**：热点参数限流对默认的SpringMVC资源无效，需要利用@SentinelResource注解标记资源
-
-
+**注意事项**：热点参数限流对默认的SpringMVC资源**无效**，需要利用`@SentinelResource`注解标记资源，这样热点参数限流的规则才能作用到使用了`@SentinelResource`注解标记的资源上，从而完成热点参数限流
 
 #### 1）标记资源
 
-给order-service中的OrderController中的/order/{orderId}资源添加注解：
+给order-service中的OrderController中的/order/{orderId}资源**添加注解**：
 
-![image-20210716120033572](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239245.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239245.png" alt="image-20210716120033572" style="zoom:50%;" />
 
 #### 2）热点参数限流规则
 
@@ -857,23 +727,21 @@ QPS非常平滑，一致保持在10，但是超出的请求没有被拒绝，而
 
 这里不要点击hot后面的按钮，页面有BUG
 
-
-
 点击左侧菜单中**热点规则**菜单：
 
-![image-20210716120319009](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239247.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239247.png" alt="image-20210716120319009" style="zoom:50%;" />
 
 点击新增，填写表单：
 
-![image-20210716120536714](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239248.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239248.png" alt="image-20210716120536714" style="zoom:50%;" />
 
-
+相当于在默认的参数限流规则上**覆盖**了两个配置，针对102和103单独设置QPS
 
 #### 3）Jmeter测试
 
 选择《热点参数限流 QPS1》：
 
-![image-20210716120754527](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239249.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239249.png" alt="image-20210716120754527" style="zoom:50%;" />
 
 这里发起请求的QPS为5.
 
@@ -885,9 +753,9 @@ QPS非常平滑，一致保持在10，但是超出的请求没有被拒绝，而
 
 运行结果：
 
-![image-20210716121105567](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239251.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239251.png" alt="image-20210716121105567" style="zoom:50%;" />
 
-
+101采用默认配置，QPS为2
 
 例外项，QPS阈值为4
 
@@ -895,19 +763,19 @@ QPS非常平滑，一致保持在10，但是超出的请求没有被拒绝，而
 
 运行结果：
 
-![image-20210716121201630](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239253.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239253.png" alt="image-20210716121201630" style="zoom:50%;" />
 
-
+参数102对应的QPS为4，所以每秒可以成功4个请求
 
 例外项，QPS阈值为10
 
-![image-20210716120919131](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239254.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239254.png" alt="image-20210716120919131" style="zoom:50%;" />
 
 运行结果：
 
-![image-20210716121220305](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239255.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239255.png" alt="image-20210716121220305" style="zoom:50%;" />
 
-
+参数103的QPS为10，所以所有的请求都可以成功
 
 # 3.隔离和降级
 
@@ -915,33 +783,21 @@ QPS非常平滑，一致保持在10，但是超出的请求没有被拒绝，而
 
 而要将这些故障控制在一定范围，避免雪崩，就要靠**线程隔离**（舱壁模式）和**熔断降级**手段了。
 
+**线程隔离**之前讲到过：调用者在调用服务提供者时，给每个调用的请求分配独立线程池，出现故障时，最多消耗这个线程池内资源，避免把调用者的所有资源耗尽从而导致雪崩问题，线程隔离是针对服务调用者的，针对不同的业务请求分配不同的线程数
 
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239192.png" alt="image-20210715173215243" style="zoom: 50%;" />
 
-**线程隔离**之前讲到过：调用者在调用服务提供者时，给每个调用的请求分配独立线程池，出现故障时，最多消耗这个线程池内资源，避免把调用者的所有资源耗尽。
+**熔断降级**：是在调用方这边加入**断路器**，统计对服务提供者的调用，如果调用的服务提供者失败比例过高，则熔断该业务，不允许访问该服务的提供者了。避免因为此服务的失败导致雪崩问题的发生，熔断降级是针对服务提供者的，当前服务提供者故障率过高就禁止访问
 
-![image-20210715173215243](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239192.png)
-
-
-
-**熔断降级**：是在调用方这边加入断路器，统计对服务提供者的调用，如果调用的失败比例过高，则熔断该业务，不允许访问该服务的提供者了。
-
-![image-20210715173428073](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239194.png)
-
-
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239194.png" alt="image-20210715173428073" style="zoom:50%;" />
 
 可以看到，不管是线程隔离还是熔断降级，都是对**客户端**（调用方）的保护。需要在**调用方** 发起远程调用时做线程隔离、或者服务熔断。
 
 而我们的微服务远程调用都是基于Feign来完成的，因此我们需要将Feign与Sentinel整合，在Feign里面实现线程隔离和服务熔断。
 
-
-
 ## 3.1.FeignClient整合Sentinel
 
 SpringCloud中，微服务调用都是通过Feign来实现的，因此做客户端保护必须整合Feign和Sentinel。
-
-
 
 ### 3.1.1.修改配置，开启sentinel功能
 
@@ -953,8 +809,6 @@ feign:
     enabled: true # 开启feign对sentinel的支持
 ```
 
-
-
 ### 3.1.2.编写失败降级逻辑
 
 业务失败后，不能直接报错，而应该返回用户一个友好提示或者默认结果，这个就是失败降级逻辑。
@@ -965,13 +819,11 @@ feign:
 
 ②方式二：FallbackFactory，可以对远程调用的异常做处理，我们选择这种
 
-
-
 这里我们演示方式二的失败降级处理。
 
 **步骤一**：在feing-api项目中定义类，实现FallbackFactory：
 
-![image-20210716122403502](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239256.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239256.png" alt="image-20210716122403502" style="zoom:33%;" />
 
 代码：
 
@@ -999,8 +851,6 @@ public class UserClientFallbackFactory implements FallbackFactory<UserClient> {
 
 ```
 
-
-
 **步骤二**：在feing-api项目中的DefaultFeignConfiguration类中将UserClientFallbackFactory注册为一个Bean：
 
 ```java
@@ -1018,7 +868,7 @@ import cn.itcast.feign.pojo.User;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-
+//注解中新增一个配置
 @FeignClient(value = "userservice", fallbackFactory = UserClientFallbackFactory.class)
 public interface UserClient {
 
@@ -1027,15 +877,9 @@ public interface UserClient {
 }
 ```
 
-
-
 重启后，访问一次订单查询业务，然后查看sentinel控制台，可以看到新的簇点链路：
 
-![image-20210716123705780](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239257.png)
-
-
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239257.png" alt="image-20210716123705780" style="zoom:50%;" />
 
 ### 3.1.3.总结
 
@@ -1050,15 +894,7 @@ Feign整合Sentinel的步骤：
 - 给FeignClient编写FallbackFactory并注册为Bean
 - 将FallbackFactory配置到FeignClient
 
-
-
-
-
-
-
 ## 3.2.线程隔离（舱壁模式）
-
-
 
 ### 3.2.1.线程隔离的实现方式
 
@@ -1070,21 +906,15 @@ Feign整合Sentinel的步骤：
 
 如图：
 
-![image-20210716123036937](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239258.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239258.png" alt="image-20210716123036937" style="zoom:50%;" />
 
 **线程池隔离**：给每个服务调用业务分配一个线程池，利用线程池本身实现隔离效果
 
 **信号量隔离**：不创建线程池，而是计数器模式，记录业务使用的线程数量，达到信号量上限时，禁止新的请求。
 
-
-
 两者的优缺点：
 
 ![image-20210716123240518](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403061239259.png)
-
-
 
 
 
