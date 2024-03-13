@@ -37,7 +37,7 @@ math: mathjax
 #  enable: false
 # 关闭文章目录功能
 # Disable table of content
-#toc: false
+toc: false
 # 绝对访问路径
 # Absolute link for visit
 #url: "分布式事务seata.html"
@@ -182,11 +182,9 @@ BASE理论是对CAP的一种**解决思路**，包含三个思想：
 
 Seata是 2019 年 1 月份蚂蚁金服和阿里巴巴共同开源的分布式事务解决方案。致力于提供高性能和简单易用的分布式事务服务，为用户打造一站式的分布式解决方案。
 
-官网地址：http://seata.io/，其中的文档、播客中提供了大量的使用说明、源码分析。
+官网地址：http://seata.io/，其中的文档、博客中提供了大量的使用说明、源码分析。
 
-![image-20210724172225817](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114689.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114689.png" alt="image-20210724172225817" style="zoom: 50%;" />
 
 ## 3.1.Seata的架构
 
@@ -194,42 +192,28 @@ Seata事务管理中有三个重要的角色：
 
 - **TC (Transaction Coordinator) -** **事务协调者：**维护全局和分支事务的状态，协调全局事务提交或回滚。
 
-- **TM (Transaction Manager) -** **事务管理器：**定义全局事务的范围、开始全局事务、提交或回滚全局事务。
+- **TM (Transaction Manager) -** **事务管理器：**监控分布式事务的入口，定义全局事务的范围、向事务协调者申请开始全局事务、提交或回滚全局事务。
 
-- **RM (Resource Manager) -** **资源管理器：**管理分支事务处理的资源，与TC交谈以注册分支事务和报告分支事务的状态，并驱动分支事务提交或回滚。
+- **RM (Resource Manager) -** **资源管理器：**管理分支事务处理的**资源**，与TC交谈以注册分支事务和报告分支事务的状态，并驱动分支事务提交或回滚。
 
+整体的架构如图，相当于TC就是**总控**，TM向TC申请**管理事务**，RM向TC申请**管理资源**：
 
-
-整体的架构如图：
-
-![image-20210724172326452](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114690.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114690.png" alt="image-20210724172326452" style="zoom:50%;" />
 
 Seata基于上述架构提供了四种不同的分布式事务解决方案：
 
 - XA模式：强一致性分阶段事务模式，牺牲了一定的可用性，无业务侵入
 - TCC模式：最终一致的分阶段事务模式，有业务侵入
-- AT模式：最终一致的分阶段事务模式，无业务侵入，也是Seata的默认模式
-- SAGA模式：长事务模式，有业务侵入
+- AT模式：最终一致的分阶段事务模式，无业务侵入，也是Seata的**默认模式**
+- SAGA模式：长事务模式，有业务侵入·
 
 无论哪种方案，都离不开TC，也就是事务的协调者。
 
+## 3.2.微服务集成Seata
 
+我们以order-service为例来演示。前提是Seata已经进行了配置并注册到了nacos中，并且Seata中的配置文件也交给了nacos进行管理，后续微服务可以从nacos中获取到TC的信息，之后将Seata启动
 
-## 3.2.部署TC服务
-
-参考课前资料提供的文档《 seata的部署和集成.md 》：
-
-![image-20210724172549013](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114691.png)
-
-
-
-## 3.3.微服务集成Seata
-
-我们以order-service为例来演示。
-
-### 3.3.1.引入依赖
+### 3.2.1.引入依赖
 
 首先，在order-service中引入依赖：
 
@@ -254,11 +238,9 @@ Seata基于上述架构提供了四种不同的分布式事务解决方案：
 </dependency>
 ```
 
+### 3.2.2.配置TC地址
 
-
-### 3.3.2.配置TC地址
-
-在order-service中的application.yml中，配置TC服务信息，通过注册中心nacos，结合服务名称获取TC地址：
+在order-service中的application.yml中，配置TC服务信息，通过注册中心nacos，结合服务名称获取TC地址，也就是如何在nacos中找到TC的地址：
 
 ```yaml
 seata:
@@ -277,8 +259,6 @@ seata:
       seata-demo: SH
 ```
 
-
-
 微服务如何根据这些配置寻找TC的地址呢？
 
 我们知道注册到Nacos中的微服务，确定一个具体实例需要四个信息：
@@ -288,8 +268,6 @@ seata:
 - application：服务名
 - cluster：集群名
 
-
-
 以上四个信息，在刚才的yaml文件中都能找到：
 
 ![image-20210724173654258](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114692.png)
@@ -298,41 +276,29 @@ namespace为空，就是默认的public
 
 结合起来，TC服务的信息就是：public@DEFAULT_GROUP@seata-tc-server@SH，这样就能确定TC服务集群了。然后就可以去Nacos拉取对应的实例信息了。
 
-
-
-
-
-### 3.3.3.其它服务
+### 3.2.3.其它服务
 
 其它两个微服务也都参考order-service的步骤来做，完全一样。
-
-
 
 # 4.动手实践
 
 下面我们就一起学习下Seata中的四种不同的事务模式。
 
-
-
 ## 4.1.XA模式
 
 XA 规范 是 X/Open 组织定义的分布式事务处理（DTP，Distributed Transaction Processing）标准，XA 规范 描述了全局的TM与局部的RM之间的接口，几乎所有主流的数据库都对 XA 规范 提供了支持。
 
-
-
 ### 4.1.1.两阶段提交
 
-XA是规范，目前主流数据库都实现了这种规范，实现的原理都是基于两阶段提交。
+XA是规范，目前主流数据库都实现了这种规范，实现的原理都是基于两阶段提交。相当于基于数据库本身的特性来实现分布式事务
 
 正常情况：
 
-![image-20210724174102768](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114693.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114693.png" alt="image-20210724174102768" style="zoom:50%;" />
 
 异常情况：
 
-![image-20210724174234987](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114694.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114694.png" alt="image-20210724174234987" style="zoom:50%;" />
 
 一阶段：
 
@@ -342,18 +308,15 @@ XA是规范，目前主流数据库都实现了这种规范，实现的原理都
 二阶段：
 
 - 事务协调者基于一阶段的报告来判断下一步操作
-  - 如果一阶段都成功，则通知所有事务参与者，提交事务
+  - 如果一阶段**都成功**，则通知所有事务参与者，提交事务
   - 如果一阶段任意一个参与者失败，则通知所有事务参与者回滚事务
-
-
+  - 都成功才提交，有一个失败都回滚
 
 ### 4.1.2.Seata的XA模型
 
 Seata对原始的XA模式做了简单的封装和改造，以适应自己的事务模型，基本架构如图：
 
-![image-20210724174424070](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114695.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114695.png" alt="image-20210724174424070" style="zoom:50%;" />
 
 RM一阶段的工作：
 
@@ -375,9 +338,7 @@ RM二阶段的工作：
 
 - 接收TC指令，提交或回滚事务
 
-
-
-
+相当于RM负责将分支事务注册到TC，之后执行业务SQL，然后将执行之后的事务状态报告给TC，TC根据所有的事务状态判断分布式事务是否提交（都成功才提交，有一个失败就都回滚），如果事务要提交，提交工作由RM完成，TC只是起到一个协调的作用
 
 ### 4.1.3.优缺点
 
@@ -391,67 +352,53 @@ XA模式的缺点是什么？
 - 因为一阶段需要锁定数据库资源，等待二阶段结束才释放，性能较差
 - 依赖关系型数据库实现事务
 
-
-
 ### 4.1.4.实现XA模式
 
 Seata的starter已经完成了XA模式的自动装配，实现非常简单，步骤如下：
 
-1）修改application.yml文件（每个参与事务的微服务），开启XA模式：
+1）修改application.yml文件（每个参与事务的微服务），开启XA模式，相当于存在分布式事务，一旦由数据库的请求就会被拦截，然后由RM统一管理：
 
 ```yaml
 seata:
   data-source-proxy-mode: XA
 ```
 
+2）给发起全局事务的**入口方法**添加@GlobalTransactional注解，这样才知道全局事务从哪里开始:
 
+本例中是OrderServiceImpl中的create方法。这个方法内部调用了其他微服务中的业务，形成了分布式事务，所谓的入口方法就是该方法在内部调用了其他微服务的事务方法
 
-2）给发起全局事务的入口方法添加@GlobalTransactional注解:
-
-本例中是OrderServiceImpl中的create方法.
-
-![image-20210724174859556](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114696.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114696.png" alt="image-20210724174859556" style="zoom:50%;" />
 
 3）重启服务并测试
 
 重启order-service，再次测试，发现无论怎样，三个微服务都能成功回滚。
 
-
-
-
-
-
-
 ## 4.2.AT模式
 
-AT模式同样是分阶段提交的事务模型，不过缺弥补了XA模型中资源锁定周期过长的缺陷。
+AT模式同样是分阶段提交的事务模型，不过缺弥补了XA模型中资源**锁定周期过长**的缺陷。
 
 ### 4.2.1.Seata的AT模型
 
 基本流程图：
 
-![image-20210724175327511](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114697.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114697.png" alt="image-20210724175327511" style="zoom:50%;" />
 
 阶段一RM的工作：
 
 - 注册分支事务
-- 记录undo-log（数据快照）
-- 执行业务sql并提交
+- 记录`undo-log`（数据快照）
+- 执行业务sql并提交，提交最终也可能被恢复
 - 报告事务状态
 
-阶段二提交时RM的工作：
+阶段二**提交**时RM的工作：
 
-- 删除undo-log即可
+- 删除undo-log即可，因为一阶段已经提交过了
 
-阶段二回滚时RM的工作：
+阶段二**回滚**时RM的工作：
 
-- 根据undo-log恢复数据到更新前
+- 根据undo-log恢复数据到更新前，由于一阶段提交过了，需要将数据恢复到更新前才可以
 
-
+有了数据快照后，数据提交之后也能恢复到原来的样子，相当于分支事务不在阻塞，性能更高
 
 ### 4.2.2.流程梳理
 
@@ -468,8 +415,6 @@ AT模式同样是分阶段提交的事务模型，不过缺弥补了XA模型中�
 ```sql
 update tb_account set money = money - 10 where id = 1
 ```
-
-
 
 AT模式下，当前分支事务执行流程如下：
 
@@ -493,8 +438,6 @@ AT模式下，当前分支事务执行流程如下：
 
 6）RM报告本地事务状态给TC
 
-
-
 二阶段：
 
 1）TM通知TC事务结束
@@ -505,39 +448,31 @@ AT模式下，当前分支事务执行流程如下：
 
 ​	 b）如果有分支事务失败，需要回滚。读取快照数据（`{"id": 1, "money": 100}`），将快照恢复到数据库。此时数据库再次恢复为100
 
-
-
-
-
 流程图：
 
-![image-20210724180722921](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114698.png)
-
-
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114698.png" alt="image-20210724180722921" style="zoom:50%;" />
 
 ### 4.2.3.AT与XA的区别
 
 简述AT模式与XA模式最大的区别是什么？
 
 - XA模式一阶段不提交事务，锁定资源；AT模式一阶段直接提交，不锁定资源。
-- XA模式依赖数据库机制实现回滚；AT模式利用数据快照实现数据回滚。
+- XA模式依赖数据库机制实现回滚；AT模式利用数据快照实现数据回滚。这样资源就不会锁定
 - XA模式强一致；AT模式最终一致
-
-
 
 ### 4.2.4.脏写问题
 
 在多线程并发访问AT模式的分布式事务时，有可能出现脏写问题，如图：
 
-![image-20210724181541234](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114699.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114699.png" alt="image-20210724181541234" style="zoom:50%;" />
 
+这是因为分布式事务的一阶段和二阶段之间**不连续**，中间会释放一次锁，如果此时被其他的事务读取到二阶段将要恢复的数据，此·时就出现了脏写问题
 
-
-解决思路就是引入了全局锁的概念。在释放DB锁之前，先拿到全局锁。避免同一时刻有另外一个事务来操作当前数据。
+解决思路就是引入了全局锁的概念。在释放DB锁之前，先拿到全局锁。避免同一时刻有另外一个事务来操作当前数据。此时相当于一阶段和二阶段**连续**，中间不会有其他事务拿到可能会恢复的数据
 
 ![image-20210724181843029](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114700.png)
 
-
+其余事务想要操作数据时，不仅需要获取到数据库的锁，还需要获取到全局锁，这样才能保证当前数据独享并且此数据不会再未来被恢复，是真的被提交了
 
 ### 4.2.5.优缺点
 
@@ -552,21 +487,19 @@ AT模式的缺点：
 - 两阶段之间属于软状态，属于最终一致
 - 框架的快照功能会影响性能，但比XA模式要好很多
 
-
-
 ### 4.2.6.实现AT模式
 
-AT模式中的快照生成、回滚等动作都是由框架自动完成，没有任何代码侵入，因此实现非常简单。
+AT模式中的快照生成、回滚等动作都是由框架自动完成，**没有任何代码侵入**，因此实现非常简单。但是需要建立数据库记录全局锁和数据快照
 
 只不过，AT模式需要一个表来记录全局锁、另一张表来记录数据快照undo_log。
 
+1）**导入数据库表，记录全局锁**
 
-
-1）导入数据库表，记录全局锁
-
-导入课前资料提供的Sql文件：seata-at.sql，其中lock_table导入到TC服务关联的数据库，undo_log表导入到微服务关联的数据库：
+导入课前资料提供的Sql文件：seata-at.sql，其中lock_table导入到TC服务关联的数据库，也就是导入到存储全局事务和分支事务的数据库中。undo_log表导入到微服务关联的数据库，也就是导入到微服务使用的数据库中：
 
 ![image-20210724182217272](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114701.png)
+
+> 上面两个表中的全局锁和undo-log都是用完就删，防止占用内存
 
 2）修改application.yml文件，将事务模式修改为AT模式即可：
 
@@ -575,27 +508,17 @@ seata:
   data-source-proxy-mode: AT # 默认就是AT
 ```
 
-
-
 3）重启服务并测试
-
-
-
-
-
-
 
 ## 4.3.TCC模式
 
-TCC模式与AT模式非常相似，每阶段都是独立事务，不同的是TCC通过人工编码来实现数据恢复。需要实现三个方法：
+TCC模式与AT模式非常相似，每阶段都是独立事务，不同的是TCC通过**人工编码**来实现数据恢复。需要实现三个方法：
 
-- Try：资源的检测和预留； 
+- Try：资源的检测和预留，判断需要的资源是否足够，足够就先拿到资源不使用； 
 
-- Confirm：完成资源操作业务；要求 Try 成功 Confirm 一定要能成功。
+- Confirm：完成资源操作业务，操作成功就说明业务成功，此时事务提交；要求 Try 成功 Confirm 一定要能成功。
 
-- Cancel：预留资源释放，可以理解为try的反向操作。
-
-
+- Cancel：预留资源释放，可以理解为try的反向操作，操作失败此时事务回滚。
 
 ### 4.3.1.流程分析
 
@@ -611,11 +534,7 @@ TCC模式与AT模式非常相似，每阶段都是独立事务，不同的是TCC
 
 ![image-20210724182457951](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114703.png)
 
-
-
 此时，总金额 = 冻结金额 + 可用金额，数量依然是100不变。事务直接提交无需等待其它事务。
-
-
 
 - **阶段二（Confirm)**：假如要提交（Confirm），则冻结金额扣减30
 
@@ -623,13 +542,7 @@ TCC模式与AT模式非常相似，每阶段都是独立事务，不同的是TCC
 
 ![image-20210724182706011](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114704.png)
 
-
-
 此时，总金额 = 冻结金额 + 可用金额 = 0 + 70  = 70元
-
-
-
-
 
 - **阶段二(Canncel)**：如果要回滚（Cancel），则冻结金额扣减30，可用余额增加30
 
@@ -637,9 +550,7 @@ TCC模式与AT模式非常相似，每阶段都是独立事务，不同的是TCC
 
 ![image-20210724182810734](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114705.png)
 
-
-
-
+相当于提交成功时冻结金额直接删除，提交失败回滚时将冻结金额恢复到总金额中即可，二阶段不管是confirm还是cancel，都是在操作一阶段预留的资源
 
 ### 4.3.2.Seata的TCC模型
 
@@ -647,7 +558,7 @@ Seata中的TCC模型依然延续之前的事务架构，如图：
 
 ![image-20210724182937713](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114706.png)
 
-
+靠资源的预留来实现分布式事务，事务之间各自操作自己预留的资源，相互不影响，从而不会出现分布式事务的问题
 
 ### 4.3.3.优缺点
 
@@ -661,45 +572,37 @@ TCC的优点是什么？
 
 - 一阶段完成直接提交事务，释放数据库资源，性能好
 - 相比AT模型，无需生成快照，无需使用全局锁，性能最强
-- 不依赖数据库事务，而是依赖补偿操作，可以用于非事务型数据库
+- 不依赖数据库事务，而是依赖**补偿**操作，可以用于非事务型数据库，业务操作之间相互隔离，只操作自己预留的资源
 
 TCC的缺点是什么？
 
-- 有代码侵入，需要人为编写try、Confirm和Cancel接口，太麻烦
+- **有代码侵入**，需要人为编写try、Confirm和Cancel接口，太麻烦
 - 软状态，事务是最终一致
-- 需要考虑Confirm和Cancel的失败情况，做好幂等处理
-
-
+- 需要考虑Confirm和Cancel的失败情况，**做好幂等处理**
 
 ### 4.3.4.事务悬挂和空回滚
 
 #### 1）空回滚
 
-当某分支事务的try阶段**阻塞**时，可能导致全局事务超时而触发二阶段的cancel操作。在未执行try操作时先执行了cancel操作，这时cancel不能做回滚，就是**空回滚**。
+当某分支事务的try阶段**阻塞**时，可能导致全局事务超时而触发二阶段的cancel操作。在未执行try操作时先执行了cancel操作，这时cancel不能做回滚，此时为了不报错，就要进行**空回滚**。也就是try没有预留到资源，回滚的时候即使cancel，也没有任何效果，但是程序不报错，保证程序正常运行
 
 如图：
 
 ![image-20210724183426891](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114707.png)
 
-执行cancel操作时，应当判断try是否已经执行，如果尚未执行，则应该空回滚。
-
-
+执行cancel操作时，**应当判断try是否已经执行**，如果尚未执行，则应该空回滚。
 
 #### 2）业务悬挂
 
-对于已经空回滚的业务，之前被阻塞的try操作恢复，继续执行try，就永远不可能confirm或cancel ，事务一直处于中间状态，这就是**业务悬挂**。
+对于已经空回滚的业务，之前被阻塞的try操作恢复，继续执行try，就永远不可能confirm或cancel ，事务一直处于中间状态，这就是**业务悬挂**。也就是不知道cancel是否做过了，如果做过了，这个业务就应该重新开始
 
-执行try操作时，应当判断cancel是否已经执行过了，如果已经执行，应当阻止空回滚后的try操作，避免悬挂
-
-
-
-
+执行try操作时，应当判断cancel是否已经执行过了，如果已经执行，应当阻止空回滚后的try操作，避免悬挂，从而造成资源被无故冻结
 
 ### 4.3.5.实现TCC模式
 
-解决空回滚和业务悬挂问题，必须要记录当前事务状态，是在try、还是cancel？
+解决**空回滚和业务悬挂**问题，必须要记录当前事务状态，是在try、还是cancel？
 
-
+> try成功了进行cancel才有意义，进行了cancel再try也没有意义
 
 #### 1）思路分析
 
@@ -720,9 +623,9 @@ CREATE TABLE `account_freeze_tbl` (
 
 - xid：是全局事务id
 - freeze_money：用来记录用户冻结金额
-- state：用来记录事务状态
+- state：用来记录事务状态，**用来判断当前需不需要空回滚或者避免业务悬挂**
 
-
+> 这个表要导入到微服务操作的数据库中，从而完成对资源的预留和更新
 
 那此时，我们的业务开怎么做呢？
 
@@ -739,11 +642,7 @@ CREATE TABLE `account_freeze_tbl` (
 - 如何避免业务悬挂？
   - try业务中，根据xid查询account_freeze ，如果已经存在则证明Cancel已经执行，拒绝执行try业务
 
-
-
 接下来，我们改造account-service，利用TCC实现余额扣减功能。
-
-
 
 #### 2）声明TCC接口
 
@@ -751,28 +650,9 @@ TCC的Try、Confirm、Cancel方法都需要在接口中基于注解来声明，
 
 我们在account-service项目中的`cn.itcast.account.service`包中新建一个接口，声明TCC三个接口：
 
-```java
-package cn.itcast.account.service;
+![image-20240313161508084](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403131615343.png)
 
-import io.seata.rm.tcc.api.BusinessActionContext;
-import io.seata.rm.tcc.api.BusinessActionContextParameter;
-import io.seata.rm.tcc.api.LocalTCC;
-import io.seata.rm.tcc.api.TwoPhaseBusinessAction;
-
-@LocalTCC
-public interface AccountTCCService {
-
-    @TwoPhaseBusinessAction(name = "deduct", commitMethod = "confirm", rollbackMethod = "cancel")
-    void deduct(@BusinessActionContextParameter(paramName = "userId") String userId,
-                @BusinessActionContextParameter(paramName = "money")int money);
-
-    boolean confirm(BusinessActionContext ctx);
-
-    boolean cancel(BusinessActionContext ctx);
-}
-```
-
-
+上面的三个方法分别是try，confirm和cancel
 
 #### 3）编写实现类
 
@@ -800,7 +680,8 @@ public class AccountTCCServiceImpl implements AccountTCCService {
     private AccountMapper accountMapper;
     @Autowired
     private AccountFreezeMapper freezeMapper;
-
+	
+    //这个方法相当于try
     @Override
     @Transactional
     public void deduct(String userId, int money) {
@@ -843,12 +724,6 @@ public class AccountTCCServiceImpl implements AccountTCCService {
 }
 ```
 
-
-
-
-
-
-
 ## 4.4.SAGA模式
 
 Saga 模式是 Seata 即将开源的长事务解决方案，将由蚂蚁金服主要贡献。
@@ -863,18 +738,14 @@ Seata官网对于Saga的指南：https://seata.io/zh-cn/docs/user/saga.html
 
 分布式事务执行过程中，依次执行各参与者的正向操作，如果所有正向操作均执行成功，那么分布式事务提交。如果任何一个正向操作执行失败，那么分布式事务会去退回去执行前面各参与者的逆向回滚操作，回滚已提交的参与者，使分布式事务回到初始状态。
 
-![image-20210724184846396](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114708.png)
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114708.png" alt="image-20210724184846396" style="zoom: 50%;" />
 
 Saga也分为两个阶段：
 
 - 一阶段：直接提交本地事务
-- 二阶段：成功则什么都不做；失败则通过编写补偿业务来回滚
-
-
+- 二阶段：成功则什么都不做；失败则通过编写**补偿业务**来回滚，从图中可以看出，一旦按序执行的某个失败，那么之前执行成功的业务就会**逐个回滚**
 
 ### 4.4.2.优缺点
-
-
 
 优点：
 
@@ -897,15 +768,9 @@ Saga也分为两个阶段：
 - 性能：有无性能损耗？
 - 场景：常见的业务场景
 
-
-
 如图：
 
 ![image-20210724185021819](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114709.png)
-
-
-
-
 
 # 5.高可用
 
@@ -915,28 +780,11 @@ Seata的TC服务作为分布式事务核心，一定要保证集群的高可用�
 
 搭建TC服务集群非常简单，启动多个TC服务，注册到nacos即可。
 
-
-
 但集群并不能确保100%安全，万一集群所在机房故障怎么办？所以如果要求较高，一般都会做异地多机房容灾。
-
-
 
 比如一个TC集群在上海，另一个TC集群在杭州：
 
 ![image-20210724185240957](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114710.png)
 
+微服务基于**事务组**（tx-service-group)与TC集群的映射关系，来查找当前应该使用哪个TC集群。当SH集群故障时，只需要将vgroup-mapping中的映射关系改成HZ。则所有微服务就会切换到HZ的TC集群了。映射关系修改需要修改配置文件，此时可以利用nacos中配置文件**热更新**的功能，将事务组与TC集群的映射关系配置到nacos的配置中心，之后就可以完成热更新
 
-
-微服务基于事务组（tx-service-group)与TC集群的映射关系，来查找当前应该使用哪个TC集群。当SH集群故障时，只需要将vgroup-mapping中的映射关系改成HZ。则所有微服务就会切换到HZ的TC集群了。
-
-
-
-## 5.2.实现高可用
-
-具体实现请参考课前资料提供的文档《seata的部署和集成.md》：
-
-![image-20210724172549013](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114691.png)
-
-第三章节：
-
-![image-20210724185638729](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202403102114711.png)
