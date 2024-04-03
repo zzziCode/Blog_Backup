@@ -73,7 +73,7 @@ toc: false
   - 生产者发送的消息未送达exchange
   - 消息到达exchange后未到达queue
 - MQ宕机，queue将消息丢失
-- consume r接收到消息后未消费就宕机
+- consumer接收到消息后未消费就宕机
 
 > 上面这些问题都导致了消息的**不可靠**
 
