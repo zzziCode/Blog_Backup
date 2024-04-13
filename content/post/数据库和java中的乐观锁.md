@@ -80,7 +80,7 @@ math: mathjax
 
 1. 数据库添加一个字段，一般名称为`version`，初始值为1：
 
-   ![image-20231028144747390](C:/Users/zzzi/AppData/Roaming/Typora/typora-user-images/image-20231028144747390.png)
+   ![image-20231028144747390](https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202404121258571.png)
 
 2. java代码中的`pojo`实体类中添加一个属性，名称与数据库中的字段名保持一致，并且添加`@Version`注解，代表这个属性受到乐观锁的控制：
 
@@ -168,7 +168,7 @@ void testUpdate(){
 <==    Updates: 0
 ```
 
-> 此时拼接出的SQL语句中，筛选条件中的`version`还是3，而第一个请求将version更新为了4，相当于这个SQL语句没有办法查询到对应的数据，自然无法更新
+> 此时拼接出的SQL语句中，筛选条件中的`version`还是3，而第一个请求将version更新为了4，相当于这个SQL语句**没有办法查询到对应的数据**，自然无法更新
 
 ### 总结
 
