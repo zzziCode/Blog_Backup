@@ -2,8 +2,8 @@
 title: "关于zzzi"
 description: "zzzi个人介绍说明。"
 
-date: 2022-06-09T20:12:52+08:00
-lastmod: 2022-06-09T20:12:52+08:00
+date: 2023-06-09T20:12:52+08:00
+lastmod: 2023-06-09T20:12:52+08:00
 
 share: false
 followme: true
@@ -17,7 +17,7 @@ toc: false
 	<br>
 	<img src="https://raw.githubusercontent.com/Aniket965/Aniket965/master/pacman.svg?sanitize=true" width="180" height="180">
 </div>
-  ## 👋👋👋Welcome to zzzi's blog! 🎉🎉🎉
+## 👋👋👋Welcome to zzzi's blog! 🎉🎉🎉
 
   - 🏫 Studing at @<a href="http://www.hrbeu.edu.cn/" target="_blank">HEU</a>
   - 🏡 Living at @[HaErBin](https://zh.wikipedia.org/wiki/%E5%93%88%E5%B0%94%E6%BB%A8%E5%B8%82)
