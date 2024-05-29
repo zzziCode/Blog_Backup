@@ -3,8 +3,8 @@ title: "JDK中的动态代理"
 description: "JDK中的动态代理"
 keywords: "JDK中的动态代理"
 
-date: 2023-10-31T10:21:12+08:00
-lastmod: 2023-10-31T10:21:12+08:00
+date: 2024-05-10T10:21:12+08:00
+lastmod: 2024-05-10T10:21:12+08:00
 
 categories:
   - 学习笔记
