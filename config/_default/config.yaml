@@ -59,7 +59,7 @@ markup:
     lineNos: true
     lineNumbersInTable: true
     noClasses: true
-    style: monokai
+    style: catppuccin-frappe
     tabWidth: 2
     # # 高亮代码的样式名称，可选：monokai | catppuccin-frappe |catppuccin-latte
     # 代码样式 ：fruity |github-dark |gruvbox-light | modus-vivendi
