@@ -57,6 +57,8 @@ math: mathjax
 
 本文主要介绍JDK中的代理是如何实现的，从基本的例子出发，先介绍简单的静态代理，然后重点介绍动态代理，开始分析源码，之后展示JDK动态生成的代理类长什么样，是如何实现代理的，最后总结整个代理的流程
 
+<img src="https://zzzi-img-1313100942.cos.ap-beijing.myqcloud.com/img/202406051704957.png" alt="Understanding the Proxy Design Pattern | by Mithun Sasidharan | Medium" style="zoom: 67%;" />
+
 <!--more-->
 
 ## 静态代理
