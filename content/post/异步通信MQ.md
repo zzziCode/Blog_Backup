@@ -240,7 +240,7 @@ public DirectExchange simpleExchange(){
 }
 ```
 
-事实上，默认情况下，由SpringAMQP声明的交换机都是持久化的。
+事实上，默认情况下，**由SpringAMQP声明的交换机都是持久化的。**
 
 可以在RabbitMQ控制台看到持久化的交换机都会带上`D`的标示：
 
@@ -260,7 +260,7 @@ public Queue simpleQueue(){
 }
 ```
 
-事实上，默认情况下，由SpringAMQP声明的队列都是持久化的。
+事实上，默认情况下，**由SpringAMQP声明的队列都是持久化的。**
 
 可以在RabbitMQ控制台看到持久化的队列都会带上`D`的标示：
 

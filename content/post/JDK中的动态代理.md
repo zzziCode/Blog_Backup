@@ -165,7 +165,7 @@ public class LogHandler implements InvocationHandler {
         this.target = target;
     }
     /**@author zzzi
-     * @date 2023/10/31 10:33
+     * @date 2024/05/09 10:33
      * 主要是利用反射，对传递来的方法调用其invoke方法，在调用前后进行增强
      */
     @Override
@@ -201,7 +201,7 @@ Class<?>[] interfaces = userService.getClass().getInterfaces();
 InvocationHandler handler = new LogHandler(userService);
 
 /**@author zzzi
-* @date 2023/10/30 22:14
+* @date 2024/05/09 22:14
 * 重点就是在这个代理对象的创建上，传入了代理对象的各种信息，以及如何代理
 * 系统就会创建对应的代理类
 */
@@ -294,7 +294,7 @@ public final class UserServiceProxy extends Proxy implements UserService {
         }
     }
     /**@author zzzi
-     * @date 2023/10/31 10:47
+     * @date 2024/05/10 10:47
      * 在代理类中调用上面定义的Handler中的invoke方法实现对被代理对象的增强
      */
     public final void select() throws  {
